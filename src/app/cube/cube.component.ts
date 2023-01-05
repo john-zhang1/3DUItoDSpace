@@ -1,17 +1,32 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
-
+import { Easing, Tween, update } from "@tweenjs/tween.js";
 
 @Component({
   selector: 'app-cube',
   templateUrl: './cube.component.html',
   styleUrls: ['./cube.component.scss']
 })
+
 export class CubeComponent implements OnInit, AfterViewInit {
 
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
+
+  counter = 0;
+  @HostListener('window:click', ['$event'])
+  shareok(event: MouseEvent) {
+    this.counter++;
+  }
+  resetCounter() {
+    this.counter = 0;
+  }
+
+  // @HostListener('window:resize', ['$event'])
+  // onResize(event) {
+  //   event.target.innerWidth;
+  // }
 
   // Reflect code
   ////////////////////
@@ -32,7 +47,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
   public size = 200;
   public texture: string = '/assets/textures/earthmap1k.jpg';
   // Stage Properties
-  public cameraZ = 10;
+  public cameraZ = -10;
   public fieldOfView = 90;
   public nearClippingPlane = 1;
   public farClippingPlane = 25000;
@@ -56,19 +71,20 @@ export class CubeComponent implements OnInit, AfterViewInit {
 
 
   // * Old variables from Connection
-  public radius = 500;
+  public radius = 1650;
   public tilt = 0.41;
   public rotationSpeed = 0.1; // initial rotation speed of object
   public container: any;
-  public stats: any;
   public floatTween: any;
   public floatAgain: any;
   public touchTween: any; // tween vars
   public controls!: TrackballControls;
   public projector: any; // typical objects for Three.js
   public mouseClock = new THREE.Clock();  // added Timer to calculate duration between automatic tweens
-  public mouseupTime: any;
-  public objectSelect: any; // vars for automatic tweening of objects
+  public mouseupTime: number = 0;
+  public objectSelect = new THREE.Mesh();
+
+  public meshArray: THREE.Mesh[] = [];
 
   public targetRotationX = 0.05; // rotation vars, tweak these to tweak the speed while rotating an object
   public targetRotationY = 0.05;
@@ -88,9 +104,9 @@ export class CubeComponent implements OnInit, AfterViewInit {
   public vector: any;
   public ray: any;
   public intersects: any;
-  public object: Object | any;
-  public currentObj!: THREE.Mesh;
-  public objects: Object[] | any;
+  public object = new THREE.Mesh();
+  public currentObj = new THREE.Mesh();
+  public objects = Array<THREE.Mesh>;
   public segmentsX: any;
   public segmentsY: any; // for optimization, the default number of segments can be adjusted for ALL objects 
 
@@ -117,9 +133,10 @@ export class CubeComponent implements OnInit, AfterViewInit {
     this.configRenderer();
     this.configControls();
     this.createLight();
-    // this.createMesh();
+    this.creatStars();
     this.createGeometries();
-    this.startRendering();
+    // this.startRendering();
+    this.animate();
   }
 
   public createScence() {
@@ -159,7 +176,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
   }
 
   public getNum(min: number, max: number) {
-    return Math.random() * (max - min) + min;
+    return (Math.random() * (max - min) + min) * 1.5;
   }
 
   // Reflect function code
@@ -185,7 +202,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
   configCamera() {
     this.camera.aspect = this.calculateAspectRatio();
     this.camera.updateProjectionMatrix();
-    this.camera.position.set(0, 0, 1500);
+    this.camera.position.set(0, 0, 100);
     this.camera.lookAt(this.scene.position);
   }
 
@@ -217,6 +234,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
 
   private createMesh(radius: number,segmentsX: number, segmentsY: number, texture: string ) {
     const geometry = new THREE.SphereGeometry(radius, segmentsX, segmentsY);
+    geometry.computeTangents();
     const material = new THREE.MeshBasicMaterial({ map: this.loder.load(texture) });
     const mesh = new THREE.Mesh(geometry, material);
     this.scene.add(mesh);
@@ -225,17 +243,26 @@ export class CubeComponent implements OnInit, AfterViewInit {
 
   createGeometries() {
     for (let i=0; i<10; i++) {
-      const mesh = this.createMesh(this.objectRadius[i]/3, 100, 50, this.planetPics[i%5]);
-      mesh.position.set(this.planetXPos[i%9], this.planetYPos[i%9], this.planetZPos[i%9]);
-      mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
-      this.scene.add(mesh);
+        const mesh = this.createMesh(this.objectRadius[i]/3, 100, 50, this.planetPics[i%5]);
+        mesh.position.set(this.planetXPos[i%9], this.planetYPos[i%9], this.planetZPos[i%9]);
+        mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
+        this.scene.add(mesh);
+        this.meshArray.push(mesh);
+    }
+    if(this.meshArray.length > 0) {
+      this.currentObj = this.meshArray[0];
     }
   }
 
   animate() {
+    requestAnimationFrame(()=>this.animate());
+    // this.objectSelect.rotation.x += 0.05;
+
     // this.mesh.rotation.x += 0.05;
     // this.mesh.rotation.y += 0.01;
+    // this.meshRotations();
     this.controls.update();
+    this.renderer.render(this.scene, this.camera);
   }
 
   public startRendering() {
@@ -247,4 +274,70 @@ export class CubeComponent implements OnInit, AfterViewInit {
     }());
   }
 
+  private creatStars() {
+    const vertices = [];
+
+    for ( let i = 0; i < 50000; i ++ ) {
+    
+      const x = THREE.MathUtils.randFloatSpread( 8000 );
+      const y = THREE.MathUtils.randFloatSpread( 8000 );
+      const z = THREE.MathUtils.randFloatSpread( 8000 );
+    
+      vertices.push( x, y, z );
+    
+    }
+    
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    
+    const material = new THREE.PointsMaterial( { color: 0x888888 } );
+    
+    const points = new THREE.Points( geometry, material );
+    
+    this.scene.add( points );
+  }
+
+  private createCloud() {
+
+  }
+
+  private meshRotations() {
+    for (let i=0;i<this.meshArray.length;i++) {
+      const geo = this.meshArray[i];
+      geo.rotation.x += (this.targetRotationX + geo.rotation.x) / 3000;
+      geo.rotation.y += (this.targetRotationY + geo.rotation.y) / 3000;
+    }
+  }
+
+
+//   render2() {
+//     let checkTime = this.mouseClock.getElapsedTime();
+//     let elapsedTime = checkTime - this.mouseupTime;
+//     let elapsedDuration = 45;
+//     if (elapsedTime >= elapsedDuration) {
+//         Tween.remove(floatTween);
+//         Tween.remove(touchTween);
+//         let floatTween = new Tween({ x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z })
+//             .to({ x: this.object[this.objectSelect].position.x, y: object[this.objectSelect].position.y, z: object[this.objectSelect].position.z }, elapsedDuration * 1000)
+//             .easing(Easing.Quadratic.InOut)
+//             .onUpdate(function () {
+//                 radian = (this.a / 180) * Math.PI;
+//                 moveCam(this.x, this.y, this.z, 12, 12, look);
+//                 var tempVec = new THREE.Vector3(this.x, this.y, this.z);
+//                 _rotateEnd = tempVec;
+//             }).start();
+//         this.updateTimer();
+//     }
+//     // actually rotate the currentObj while rendering, adjust speed of the rotation here 
+//     currentObj.rotation.x += (targetRotationX + currentObj.rotation.x) / 3000;
+//     currentObj.rotation.y += (targetRotationY + currentObj.rotation.y) / 3000;
+//     // render
+//     renderer.render(scene, camera);
+
+// }
+
+// updateTimer() {
+//   mouseupTime = this.mouseClock.getElapsedTime();
+//   objectSelect = Math.ceil(this.getNum(1, 8));
+// }
 }
