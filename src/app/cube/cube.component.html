@@ -1,4 +1,11 @@
 <canvas #canvas id="canvas" class="canvas-container"></canvas>
-<h1>Hello, you have pressed enter {{counter}} number of times!</h1> 
-Press enter key to increment the counter.
-<button (click)="resetCounter()">Reset Counter</button>
+<!-- <h1>Hello, you have pressed enter {{counter}} number of times!</h1> 
+Press enter key to increment the counter. -->
+<!-- <button (click)="resetCounter()">Reset Counter</button> -->
+<div *ngIf="screenMode=='big'">
+    ...do something with big screen
+  </div>
+  
+  <div *ngIf="screenMode=='small'">
+    ...do something with small screen
+  </div>

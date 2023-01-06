@@ -14,19 +14,27 @@ export class CubeComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
 
-  counter = 0;
-  @HostListener('window:click', ['$event'])
-  shareok(event: MouseEvent) {
-    this.counter++;
-  }
-  resetCounter() {
-    this.counter = 0;
-  }
-
-  // @HostListener('window:resize', ['$event'])
-  // onResize(event) {
-  //   event.target.innerWidth;
+  // counter = 0;
+  // @HostListener('window:click', ['$event'])
+  // shareok(event: MouseEvent) {
+  //   this.counter++;
   // }
+  // resetCounter() {
+  //   this.counter = 0;
+  // }
+  @HostListener('window:resize', ['$event'])
+  onResize(event:MouseEvent) {
+    let screenWidth=window.innerWidth;
+
+    if(screenWidth>760)
+      {
+        this.screenMode="big"
+      }
+      else
+      {
+        this.screenMode="small";
+      }
+  }
 
   // Reflect code
   ////////////////////
@@ -121,8 +129,20 @@ export class CubeComponent implements OnInit, AfterViewInit {
   public look = new THREE.Vector3(0, 0, 0);
   public trigger = 0;
 
+  screenMode:any;
+  ngOnInit() {
+    //Initial screenMode setup
+    let screenWidth=window.innerWidth;
 
-  ngOnInit() { }
+    if(screenWidth>760)
+      {
+        this.screenMode="big"
+      }
+      else
+      {
+        this.screenMode="small";
+      }  
+   }
 
   ngAfterViewInit() {
     // this.createScence();
