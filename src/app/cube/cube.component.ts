@@ -14,28 +14,6 @@ export class CubeComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
 
-  // counter = 0;
-  // @HostListener('window:click', ['$event'])
-  // shareok(event: MouseEvent) {
-  //   this.counter++;
-  // }
-  // resetCounter() {
-  //   this.counter = 0;
-  // }
-  @HostListener('window:resize', ['$event'])
-  onResize(event:MouseEvent) {
-    let screenWidth=window.innerWidth;
-
-    if(screenWidth>760)
-      {
-        this.screenMode="big"
-      }
-      else
-      {
-        this.screenMode="small";
-      }
-  }
-
   // Reflect code
   ////////////////////
   public renderer!: THREE.WebGLRenderer;
