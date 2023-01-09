@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CubeComponent } from './cube.component';
+import { ThreeCanvasComponent } from './three-canvas.component';
 
-describe('CubeComponent', () => {
-  let component: CubeComponent;
-  let fixture: ComponentFixture<CubeComponent>;
+describe('ThreeCanvasComponent', () => {
+  let component: ThreeCanvasComponent;
+  let fixture: ComponentFixture<ThreeCanvasComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CubeComponent ]
+      declarations: [ ThreeCanvasComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CubeComponent);
+    fixture = TestBed.createComponent(ThreeCanvasComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

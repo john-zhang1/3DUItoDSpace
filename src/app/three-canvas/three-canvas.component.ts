@@ -1,37 +1,30 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
-import { Easing, Tween, update } from "@tweenjs/tween.js";
+import * as TWEEN from '@tweenjs/tween.js';
 
 @Component({
-  selector: 'app-cube',
-  templateUrl: './cube.component.html',
-  styleUrls: ['./cube.component.scss']
+  selector: 'ds-three-canvas',
+  templateUrl: './three-canvas.component.html',
+  styleUrls: ['./three-canvas.component.scss']
 })
+export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
-export class CubeComponent implements OnInit, AfterViewInit {
-
-  @ViewChild('canvas')
-  public canvasRef!: ElementRef;
-
-  // Reflect code
-  ////////////////////
   public renderer!: THREE.WebGLRenderer;
   public scene!: THREE.Scene;
   public camera!: THREE.PerspectiveCamera;
   public mesh!: THREE.Mesh;
   public light: THREE.AmbientLight | any;
 
-  ////////////////////
   public getScreenWidth: any;
   public getScreenHeight: any;
 
-  // Cube Properties
+  // Mesh Properties
 
   public rotationSpeedX = 0.05;
   public rotationSpeedY = 0.01;
   public size = 200;
-  public texture: string = '/assets/textures/earthmap1k.jpg';
+
   // Stage Properties
   public cameraZ = -10;
   public fieldOfView = 90;
@@ -39,36 +32,24 @@ export class CubeComponent implements OnInit, AfterViewInit {
   public farClippingPlane = 25000;
   // Helper Properties
 
-  // 
-
   private get canvas(): HTMLCanvasElement {
     return this.canvasRef.nativeElement;
   }
   public loder = new THREE.TextureLoader();
-  // public geometry = new THREE.BoxGeometry(1, 1, 1);
-  // public geometry = new THREE.PlaneGeometry(1, 1, 10);
-  // public geometry = new THREE.CylinderGeometry(1.5, 1.5, 1, 32);
-  // public geometry = new THREE.IcosahedronGeometry(1.5, 0);
-  // public geometry = new THREE.ConeGeometry(1, 2, 32);
   public geometry = new THREE.SphereGeometry(1.5, 32, 32);
-
-  public material = new THREE.MeshBasicMaterial({ map: this.loder.load(this.texture) });
-  public cube = new THREE.Mesh(this.geometry, this.material);
-
 
   // * Old variables from Connection
   public radius = 1650;
   public tilt = 0.41;
   public rotationSpeed = 0.1; // initial rotation speed of object
   public container: any;
-  public floatTween: any;
+  public floatTween = new TWEEN.Tween({x:0, y:0, z:0});
+  public touchTween = new TWEEN.Tween({x:0, y:0, z:0});
   public floatAgain: any;
-  public touchTween: any; // tween vars
   public controls!: TrackballControls;
-  public projector: any; // typical objects for Three.js
   public mouseClock = new THREE.Clock();  // added Timer to calculate duration between automatic tweens
   public mouseupTime: number = 0;
-  public objectSelect = new THREE.Mesh();
+  public indexCurrent = 0;
 
   public meshArray: THREE.Mesh[] = [];
 
@@ -107,25 +88,111 @@ export class CubeComponent implements OnInit, AfterViewInit {
   public look = new THREE.Vector3(0, 0, 0);
   public trigger = 0;
 
-  screenMode:any;
-  ngOnInit() {
-    //Initial screenMode setup
-    let screenWidth=window.innerWidth;
+  @ViewChild('canvas')
+  public canvasRef!: ElementRef;
 
-    if(screenWidth>760)
-      {
-        this.screenMode="big"
+  @HostListener('window:click', ['$event'])
+  async onDocumentMouseDown(event: MouseEvent) {
+    event.preventDefault();
+    TWEEN.removeAll();
+    const vector = new THREE.Vector3((event.clientX / this.canvas.clientWidth) * 2 - 1, - (event.clientY / this.canvas.clientHeight) * 2 + 1, 0.5);
+
+    const look = new THREE.Vector3();
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    mouse.x = ( event.clientX / this.canvas.clientWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / this.canvas.clientHeight ) * 2 + 1;
+    raycaster.setFromCamera( mouse, this.camera );
+    const intersects = raycaster.intersectObjects( this.meshArray, false );
+    const moveCam = (camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) => {
+      this.camera.position.x = camiX;
+      this.camera.position.y = camiY;
+      this.camera.position.z = camiZ;
+      this.camera.lookAt(look);
+      this.camera.updateProjectionMatrix();
+    }
+
+    if (intersects.length > 0) {
+      this.controls.enabled = false;
+      console.log("Camera Position before: "+ this.camera.position.x + ","+this.camera.position.y +","+this.camera.position.z);
+      console.log("Intersect Position before: "+ intersects[0].object.position.x + ","+intersects[0].object.position.y +","+intersects[0].object.position.z);
+      console.log("Planet 1 Position before: "+ this.meshArray[1].position.x + ","+this.meshArray[1].position.y +","+this.meshArray[1].position.z);
+      console.log("Planet 2 Position before: "+ this.meshArray[2].position.x + ","+this.meshArray[2].position.y +","+this.meshArray[2].position.z);
+      TWEEN.removeAll();
+      this.touchTween = new TWEEN.Tween( {x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z} )
+        .to( {x: intersects[0].object.position.x, y: intersects[0].object.position.y, z: intersects[0].object.position.z }, 400 )
+        .easing(TWEEN.Easing.Cubic.InOut)
+        .onUpdate(function(o) {
+          moveCam(o.x, o.y, o.z, look)
+        })
+        .start()
+        await new Promise(f => setTimeout(f, 1000));
+        console.log("Camera Position after: "+ this.camera.position.x + ","+this.camera.position.y +","+this.camera.position.z);
+        console.log("Intersect Position after: "+ intersects[0].object.position.x + ","+intersects[0].object.position.y +","+intersects[0].object.position.z);
+        console.log("Planet 1 Position after: "+ this.meshArray[1].position.x + ","+this.meshArray[1].position.y +","+this.meshArray[1].position.z);
+        console.log("Planet 2 Position after: "+ this.meshArray[2].position.x + ","+this.meshArray[2].position.y +","+this.meshArray[2].position.z);  
+    } else {
+      this.controls.enabled = true;
+      this.targetRotationX = 0;
+      this.targetRotationX = 0;
+    }
+  }
+
+  private elapsedDuration = 45;
+  public renderTween() {
+
+    let theta = 0;
+
+    theta += 0.2;
+
+    // this.camera.position.x = this.radius * Math.sin( theta * Math.PI / 360 );
+    // this.camera.position.y = this.radius * Math.sin( theta * Math.PI / 360 );
+    // this.camera.position.z = this.radius * Math.cos( theta * Math.PI / 360 );
+    // this.camera.lookAt( this.scene.position );
+
+
+    const look = new THREE.Vector3();
+    let checkTime = this.mouseClock.getElapsedTime(); // auto tween setup
+    let elapsedTime = checkTime - this.mouseupTime;
+    let cameraX = this.radius * Math.sin( theta * Math.PI / 360 );
+    let cameraY = this.radius * Math.sin( theta * Math.PI / 360 );
+    let cameraZ =  this.radius * Math.cos( theta * Math.PI / 360 );
+    const moveCam = (camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) => {
+      this.camera.position.x = camiX;
+      this.camera.position.y = camiY;
+      this.camera.position.z = camiZ;
+      this.camera.lookAt(look);
+      this.camera.updateProjectionMatrix();
+    }
+      if (elapsedTime >= 0) {
+          // TWEEN.removeAll();
+          let meshSelected = this.meshArray[this.indexCurrent] as THREE.Mesh;
+          this.floatTween = new TWEEN.Tween({ x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z })
+              .to({ x: meshSelected.position.x, y: meshSelected.position.y, z: meshSelected.position.z }, 1000)
+              .easing(TWEEN.Easing.Bounce.Out)
+              .onUpdate(function(o) {
+                moveCam(o.x, o.y, o.z, look)
+              })
+              .start();
+          this.updateTimer();
       }
-      else
-      {
-        this.screenMode="small";
-      }  
-   }
+      // actually rotate the currentObj while rendering, adjust speed of the rotation here 
+      // currentObj.rotation.x += (targetRotationX + currentObj.rotation.x) / 3000;
+      // currentObj.rotation.y += (targetRotationY + currentObj.rotation.y) / 3000;
+      // // render
+      // this.renderer.render(this.scene, this.camera);
 
-  ngAfterViewInit() {
-    // this.createScence();
-    // this.startRenderingLoop();
+  };
 
+  private updateTimer() { // function to update the timer between autotween cycles
+    this.mouseupTime = this.mouseClock.getElapsedTime();
+    this.indexCurrent = Math.floor(Math.random() * this.meshArray.length);
+}
+
+  ngOnInit() { }
+
+  ngAfterViewInit(): void {
+    this.createScence();
     this.configScene();
     this.configCamera();
     this.configRenderer();
@@ -137,12 +204,10 @@ export class CubeComponent implements OnInit, AfterViewInit {
     this.animate();
   }
 
+
   public createScence() {
     // Scene
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x000000);
-    this.scene.add(this.cube);
-
     // Camera
     let aspectRatio = this.calculateAspectRatio();
     this.camera = new THREE.PerspectiveCamera(
@@ -154,21 +219,16 @@ export class CubeComponent implements OnInit, AfterViewInit {
     this.camera.position.z = this.cameraZ;
   }
 
-  public animateCube() {
-    this.cube.rotation.x += 0.05;
-    this.cube.rotation.y += 0.01;
-  }
-
   public startRenderingLoop() {
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
     this.renderer.setPixelRatio(devicePixelRatio);
     this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
 
-    let component: CubeComponent = this;
+    let component: ThreeCanvasComponent = this;
     (function render() {
       requestAnimationFrame(render);
-      component.animateCube();
+      component.animate();
       component.renderer.render(component.scene, component.camera);
     }());
   }
@@ -188,10 +248,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
     return this.canvas.clientWidth / this.canvas.clientHeight;
   }
 
-  constructor() {
-    this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(90, 800 / 640, 1, 25000);
-  }
+  constructor() {}
 
   configScene() {
     this.scene.background = new THREE.Color(0x000000);
@@ -212,7 +269,7 @@ export class CubeComponent implements OnInit, AfterViewInit {
 
   configControls() {
     this.controls = new TrackballControls(this.camera, this.canvas);
-    this.controls.rotateSpeed = 0.4;
+    this.controls.rotateSpeed = 2.4;
     this.controls.zoomSpeed = 1.2;
     this.controls.panSpeed = 0.2;
     this.controls.noZoom = false;
@@ -252,19 +309,26 @@ export class CubeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  public viewCanvas() {
+    const mainPlanet = this.meshArray[0];
+    mainPlanet.position.set(mainPlanet.position.x+100,mainPlanet.position.y+100,mainPlanet.position.z+100);
+  }
+
   animate() {
     requestAnimationFrame(()=>this.animate());
-    // this.objectSelect.rotation.x += 0.05;
+    // this.indexCurrent.rotation.x += 0.05;
 
     // this.mesh.rotation.x += 0.05;
     // this.mesh.rotation.y += 0.01;
     // this.meshRotations();
     this.controls.update();
+    // this.renderTween();
     this.renderer.render(this.scene, this.camera);
+    TWEEN.update();
   }
 
   public startRendering() {
-    let component: CubeComponent = this;
+    let component: ThreeCanvasComponent = this;
     (function render() {
       requestAnimationFrame(render);
       component.animate();
@@ -307,35 +371,38 @@ export class CubeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  public moveCam1(camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) {
+    this.camera.position.x = camiX;
+    this.camera.position.y = camiY;
+    this.camera.position.z = camiZ;
+    this.camera.lookAt(look);
+    this.camera.updateProjectionMatrix();
+  }
 
-//   render2() {
-//     let checkTime = this.mouseClock.getElapsedTime();
-//     let elapsedTime = checkTime - this.mouseupTime;
-//     let elapsedDuration = 45;
-//     if (elapsedTime >= elapsedDuration) {
-//         Tween.remove(floatTween);
-//         Tween.remove(touchTween);
-//         let floatTween = new Tween({ x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z })
-//             .to({ x: this.object[this.objectSelect].position.x, y: object[this.objectSelect].position.y, z: object[this.objectSelect].position.z }, elapsedDuration * 1000)
-//             .easing(Easing.Quadratic.InOut)
-//             .onUpdate(function () {
-//                 radian = (this.a / 180) * Math.PI;
-//                 moveCam(this.x, this.y, this.z, 12, 12, look);
-//                 var tempVec = new THREE.Vector3(this.x, this.y, this.z);
-//                 _rotateEnd = tempVec;
-//             }).start();
-//         this.updateTimer();
-//     }
-//     // actually rotate the currentObj while rendering, adjust speed of the rotation here 
-//     currentObj.rotation.x += (targetRotationX + currentObj.rotation.x) / 3000;
-//     currentObj.rotation.y += (targetRotationY + currentObj.rotation.y) / 3000;
-//     // render
-//     renderer.render(scene, camera);
+  public render() {
+    requestAnimationFrame(()=>this.render());
+    // this.animate();
+    this.renderer.render(this.scene, this.camera);
+  }
 
-// }
+  public getSphericalPackingList(dist: number, rad: number) {
+    let positionArray = [];
+    let delta = 2 * Math.asin(rad / dist);
+    for (let beta = 0; beta < Math.PI; beta = beta + delta) {
+      let R = Math.sin(beta) * dist; // rad of selected circle
+      let alpha = 2 * Math.asin(rad / R);
+      let numofspheres = Math.floor(2 * Math.PI / alpha);
+      for (let i = 0; i < numofspheres; i++) {
+        let angle = alpha * i;
+        let position = new THREE.Vector3(
+          Math.sin(beta) * Math.cos(angle) * dist,
+          Math.sin(beta) * Math.sin(angle) * dist,
+          Math.cos(beta) * dist
+        );
+        positionArray.push({ pos: position, valid: 0 });
+      }
+    }
+    return positionArray;
+  }
 
-// updateTimer() {
-//   mouseupTime = this.mouseClock.getElapsedTime();
-//   objectSelect = Math.ceil(this.getNum(1, 8));
-// }
 }
