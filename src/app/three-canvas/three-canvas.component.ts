@@ -2,8 +2,8 @@ import { AfterViewInit, Component, ElementRef, OnInit, ViewChild, HostListener }
 import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import * as TWEEN from '@tweenjs/tween.js';
-import { GUI } from 'dat.gui';
-import { UserObject, ResourceData } from './canvasutils';
+// import { GUI } from 'dat.gui';
+import { UserObject, ResourceData, SpherePacking, DistanceAndVertex } from './three-models';
 import { SITEDATASET, COMMUNITYDATASET, COLLECTIONDATASET } from './mock-data';
 
 @Component({
@@ -60,8 +60,11 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public planetPics = ['assets/textures/earth_atmos_2048.jpg', 'assets/textures/earthbump1k.jpg', 'assets/textures/earthmap1k.jpg', 'assets/textures/jupiter2_1k.jpg', 'assets/textures/land_ocean_ice_cloud_2048.jpg', 'assets/textures/mars_1k_color.jpg', 'assets/textures/mercurymap.jpg', 'assets/textures/saturnmap.jpg', 'assets/textures/neptunemap.jpg'];
   public look = new THREE.Vector3(0, 0, 0);
 
-  public gui = new GUI();
-  public cubeFolder!: GUI;
+  // public gui = new GUI();
+  // public cubeFolder!: GUI;
+
+  public earthPane = {} as ResourceData;
+  public moonsPane = {} as UserObject;
 
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
@@ -85,6 +88,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       this.camera.updateProjectionMatrix();
     }
     if (intersects.length > 0 ) {
+      // Info pane
+      this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
+      this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);
+
       let cx = intersects[0].object.position.x;
       let cy = intersects[0].object.position.y;
       let cz = intersects[0].object.position.z;  
@@ -200,11 +207,17 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     this.createLight();
     this.creatStars();
     this.createInitGeometriesOnPlane();
+    this.createSecondLevelCCMeshes();
+    this.createThirdLevelCCMeshes();
+    this.createFourthLevelCCMeshes();
+    this.createRestLevelCCMeshes();
     // this.createGroupMeshes();
     // this.createGeometries();
     // this.createGeometriesOnPlane();
     // this.startRendering();
     this.animate();
+    // this.findChildrenIDBFS(0);
+    // console.log('this.meshArray length ' + this.meshArray.length);
   }
 
 
@@ -290,7 +303,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     this.scene.add(this.light);
   }
 
-  private createMesh(radius: number,segmentsX: number, segmentsY: number, texture?: string ) {
+  private createMesh(radius: number,segmentsX: number, segmentsY: number, texture?: string) {
     let material: THREE.MeshBasicMaterial;
     if( typeof texture === 'undefined') {
       let color = Math.random() * 0xffffff;
@@ -337,12 +350,13 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
           mesh = this.createMesh(150, 100, 50, this.planetPics[i%5]);
           mesh.userData = storedPosArray;
           let ind =  Math.floor(Math.random() * posArray.length);
-          if (posArray[ind].valid == 1) {
-              while (posArray[ind].valid == 1)
-                  ind = Math.floor(Math.random() * posArray.length);
+          if (posArray[ind].occupied) {
+              while (posArray[ind].occupied) {
+                ind = Math.floor(Math.random() * posArray.length);
+              }
           }
-          posArray[ind].valid = 1;
-          mesh.position.set(posArray[ind].pos.x, posArray[ind].pos.y, posArray[ind].pos.z);
+          posArray[ind].occupied = true;
+          mesh.position.set(posArray[ind].position.x, posArray[ind].position.y, posArray[ind].position.z);
           this.createLines(this.meshArray[0], mesh, 0x0000ff);
         }
         // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
@@ -370,12 +384,13 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
           mesh = this.createMesh(100, 100, 50, this.planetPics[i%5]);
           mesh.userData = storedPosArray;
           let ind =  Math.floor(Math.random() * posArray.length);
-          if (posArray[ind].valid == 1) {
-              while (posArray[ind].valid == 1)
-                  ind = Math.floor(Math.random() * posArray.length);
+          if (posArray[ind].occupied) {
+              while (posArray[ind].occupied) {
+                ind = Math.floor(Math.random() * posArray.length);
+              }
           }
-          posArray[ind].valid = 1;
-          mesh.position.set(posArray[ind].pos.x, posArray[ind].pos.y, posArray[ind].pos.z);
+          posArray[ind].occupied = true;
+          mesh.position.set(posArray[ind].position.x, posArray[ind].position.y, posArray[ind].position.z);
           this.createLines(this.meshArray[0], mesh, 0x888888);
         }
         // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
@@ -395,34 +410,34 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   createInitGeometriesOnPlane() {
     let posArray2D = this.get2DPackingList(400, 100);
     let posArray3D = this.get3DPackingList(400, 100);
-    console.log("3D position length: " + posArray3D.length)
-    let cData = this.getTopCommunities();
-    let mesh: THREE.Mesh;
+    let cData: ResourceData[] = [];
+    cData.push(SITEDATASET);
+    let tcd = this.findTopLevelCommunityData();
+    tcd.forEach((tc) => {
+      cData.push(tc);
+    })
 
-    for (let i = 0; i < cData.length + 1; i++) {
+    for (let i = 0; i < cData.length; i++) {
         let mesh: THREE.Mesh;
         let repdata = {} as UserObject;
         if(i == 0) {
-          // SHAREOK
           mesh = this.createMesh(100, 100, 50, this.planetPics[0]);
           mesh.position.set(0, 0, 0);
-          let sdata = SITEDATASET;``
           repdata.packing2 = posArray2D;
           repdata.packing3 = posArray3D;
-          repdata.showstatus = true;
-          repdata.resourcedata = sdata;
+          repdata.showchildren = true;
+          repdata.resourcedata = cData[i];
           mesh.userData = repdata;
         } else {
           mesh = this.createMesh(100, 100, 50);
-          repdata.packing2 = posArray2D;
-          repdata.packing3 = posArray3D;
-          repdata.showstatus = false;
-          repdata.resourcedata = cData[i-1];
-          mesh.userData = repdata;
-
           let ind =  4 * i - 4;
-          posArray2D[ind].valid = 1;
-          mesh.position.set(posArray2D[ind].pos.x, posArray2D[ind].pos.y, posArray2D[ind].pos.z);
+          posArray2D[ind].occupied = true;
+          mesh.position.set(posArray2D[ind].position.x, posArray2D[ind].position.y, posArray2D[ind].position.z);
+          repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
+          repdata.packing3 = this.getChildrenOutward3DPacking(400, 100, mesh);
+          repdata.showchildren = false;
+          repdata.resourcedata = cData[i];
+          mesh.userData = repdata;
           this.createLines(this.meshArray[0], mesh, 0x888888);
         }
         // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
@@ -440,7 +455,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   }
 
   createGroupMeshes(center: THREE.Mesh) {
-    let posArray = center.userData as { pos: THREE.Vector3; valid: number; }[];
+    let posArray = center.userData as SpherePacking[];
     if(posArray.length == 0) {
       posArray = this.get3DPackingList(800, 100);
     }
@@ -455,8 +470,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
     for (let i=0; i<spheresNum; i++) {
       let mesh = new THREE.Mesh(geometry, material);
-      posArray[i+2].valid = 1;
-      mesh.position.set( posArray[i+2].pos.x + x, posArray[i+2].pos.y + y, posArray[i+2].pos.z + z);
+      posArray[i+2].occupied = true;
+      mesh.position.set( posArray[i+2].position.x + x, posArray[i+2].position.y + y, posArray[i+2].position.z + z);
       this.createLines(mesh, center);
       this.meshArray.push(mesh);
       this.scene.add(mesh);
@@ -552,7 +567,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
           Math.sin(beta) * Math.sin(angle) * dist,
           Math.cos(beta) * dist
         );
-        positionArray.push({ pos: position, valid: 0 });
+        positionArray.push({ position: position, occupied: false });
       }
     }
     return positionArray;
@@ -590,7 +605,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         Math.cos(angle) * dist + vertex.x,
         vertex.z
       );
-      positionArray.push({ pos: position, valid: 0 });
+      positionArray.push({ position: position, occupied: false });
       angle += alpha;
   }
     return positionArray;
@@ -606,11 +621,11 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return mouse;
   }
 
-  private setupDatGui(mesh: THREE.Mesh) {
-    if(typeof this.cubeFolder === 'undefined') {
-      // this.gui.removeFolder(this.cubeFolder);
-      this.cubeFolder = this.gui.addFolder('Information');
-    }
+  // private setupDatGui(mesh: THREE.Mesh) {
+  //   if(typeof this.cubeFolder === 'undefined') {
+  //     // this.gui.removeFolder(this.cubeFolder);
+  //     this.cubeFolder = this.gui.addFolder('Information');
+  //   }
     
     
     // this.cubeFolder.add(mesh.userData as UserObject, 'name');
@@ -619,19 +634,403 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     // // cubeFolder.domElement.innerHTML = 'hello';
     // console.log("All folders "+this.cubeFolder.__folders + '-' + this.cubeFolder.__folders[0]);
     // console.log("DOM "+this.cubeFolder.domElement.innerHTML);
-    let domelement = '<ul><li class="title">Information</li><li class="cr string"><div><span class="property-name">name</span><div class="c"><input type="text"></div></div></li><li class="cr string"><div><span class="property-name">uuid</span><div class="c"><input type="text"></div></div></li></ul>';
-    this.cubeFolder.domElement.innerHTML = domelement
+  //   let domelement = '<ul><li class="title">Information</li><li class="cr string"><div><span class="property-name">name</span><div class="c"><input type="text"></div></div></li><li class="cr string"><div><span class="property-name">uuid</span><div class="c"><input type="text"></div></div></li></ul>';
+  //   this.cubeFolder.domElement.innerHTML = domelement
+  // }
+
+  private getEarthPaneInfo(earth: THREE.Mesh) {
+    const info = (earth.userData as UserObject).resourcedata;
+    return info;
   }
 
-  private getTopCommunities() {
-    let cData = COMMUNITYDATASET;
-    let tc: ResourceData[] = [];
-    cData.forEach((element) => {
-      if(element.parent === 0) {
-        tc.push(element);
+  private getMoonsPaneInfo(earth: THREE.Mesh) {
+    let info = earth.userData as UserObject;
+    return info;
+  }
+
+  private getChildrenOutward3DPacking(distance: number, radius: number, base: THREE.Mesh) {
+    let oPacking = [] as SpherePacking[];
+    let center = new THREE.Vector3(0, 0, 0);
+    let packings = this.get3DPackingList(distance, radius);
+    let aPackings = this.tweakedPackingList(base, packings);
+    let distanceToCenter = base.position.distanceTo(center);
+    let minDistance = Math.sqrt(Math.pow(distanceToCenter, 2) + Math.pow(distance, 2));
+    let distanceAndVertex: DistanceAndVertex[] = [];
+    aPackings.forEach((vertex) => {
+      let dist = vertex.position.distanceTo(center);
+      if(dist > minDistance) {
+        oPacking.push(vertex);
       }
     })
-    return tc;
+    return oPacking;
+  }
+  private getChildrenOutward3DPackingSort(distance: number, radius: number, base: THREE.Mesh) {
+    let oPacking = [] as SpherePacking[];
+    let center = new THREE.Vector3(0, 0, 0);
+    let packings = this.get3DPackingList(distance, radius);
+    let aPackings = this.tweakedPackingList(base, packings);
+    let distanceToCenter = base.position.distanceTo(center);
+    let minDistance = Math.sqrt(Math.pow(distanceToCenter, 2) + Math.pow(distance, 2));
+    let distanceAndVertex: DistanceAndVertex[] = [];
+    aPackings.forEach((vertex) => {
+      let dist = vertex.position.distanceTo(center);
+      if(dist > minDistance) {
+        let dav = {} as DistanceAndVertex;
+        dav.distance = dist;
+        dav.vertext = vertex;
+        distanceAndVertex.push(dav);
+      }
+      let dvArray = distanceAndVertex.sort((a, b) => (a.distance < b.distance) ? -1 : 1);
+      dvArray.forEach((dv) => {
+        oPacking.push(dv.vertext);
+      })
+    })
+    return oPacking;
+  }
+
+  private getChildrenOutward2DPacking(distance: number, radius: number, base: THREE.Mesh) {
+    let oPacking = [] as SpherePacking[];
+    let center = new THREE.Vector3(0, 0, 0);
+    let packings = this.get2DPackingList(distance, radius);
+    let aPackings = this.tweakedPackingList(base, packings);
+    let distanceToCenter = base.position.distanceTo(center);
+    let minDistance = Math.sqrt(Math.pow(distanceToCenter, 2) + Math.pow(distance, 2));
+    aPackings.forEach((vertex) => {
+      let dist = vertex.position.distanceTo(center);
+      if(dist > minDistance) {
+        oPacking.push(vertex);
+      }
+    })
+    return oPacking;
+  }
+
+  private tweakedPackingList(base: THREE.Mesh, packing: SpherePacking[]) {
+    let aPacking = [] as SpherePacking[];
+    let x = base.position.x;
+    let y = base.position.y;
+    let z = base.position.z;
+    packing.forEach((vertex) => {
+      let pos = new THREE.Vector3();
+      let sp = {} as SpherePacking;
+      pos.set(vertex.position.x + x, vertex.position.y + y, vertex.position.z + z);
+      sp.position = pos;
+      sp.occupied = vertex.occupied;
+      aPacking.push(sp);
+    })
+    return aPacking;
+  }
+
+  /*
+  Breadth First Search                
+  */
+  private findChildrenIDBFS(rootID: number) {
+    let queue: number[] = [];
+    let children: number[] = [];
+    queue.push(rootID);
+    children.push(rootID);
+    if(rootID === 0) {
+      let site = SITEDATASET;
+      site.children.forEach((c) => {
+        queue.push(c);
+        children.push(c);
+      })
+    }
+
+    let communities = COMMUNITYDATASET;
+    let currentID: number;
+    while(queue.length > 0) {
+      currentID = queue.shift() as number;
+      communities.forEach((community) => {
+        if(community.handleID === currentID) {
+          let cids = community.children;
+          cids.forEach((cid) => {
+            queue.push(cid);
+            children.push(cid);
+          })
+        }
+      })
+    }
+    return children;
+  }
+
+  private createTopLevelCommunityMeshesOnPlane() {}
+
+  private createSecondLevelCCMeshes() {
+    let topLevelCommunityData = this.findTopLevelCommunityData();
+    for(let i=0;i<topLevelCommunityData.length;i++) {
+      let children = this.findDirectChildrenData(topLevelCommunityData[i]);
+      let base = this.getMeshByID(topLevelCommunityData[i].handleID as number);
+      let packing = (base.userData as UserObject).packing3;
+      for(let j=0;j<children.length;j++) {
+        let mesh = this.createMesh(50, 100, 50);
+        mesh.position.copy(packing[j].position);
+        packing[j].occupied = true;
+        let repdata = {} as UserObject;
+        repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPacking(400, 100, mesh);
+        repdata.showchildren = false;
+        repdata.resourcedata = children[j];
+        mesh.userData = repdata;
+        this.createLines(base, mesh, 0x888888);
+        this.meshArray.push(mesh);
+      }
+    }    
+  }
+
+  private createThirdLevelCCMeshes() {
+    let secondLevelCCData = this.findSecondLevelCCData();
+    for(let i=0;i<secondLevelCCData.length;i++) {
+      let children = this.findDirectChildrenData(secondLevelCCData[i]);
+      let base = this.getMeshByID(secondLevelCCData[i].handleID as number);
+      let packing = (base.userData as UserObject).packing3;
+      for(let j=0;j<children.length;j++) {
+        let mesh = this.createMesh(50, 100, 50);
+        mesh.position.copy(packing[j].position);
+        packing[j].occupied = true;
+        let repdata = {} as UserObject;
+        repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.showchildren = false;
+        repdata.resourcedata = children[j];
+        mesh.userData = repdata;
+        this.createLines(base, mesh, 0x888888);
+        this.meshArray.push(mesh);
+      }
+    }
+  }
+
+  private createFourthLevelCCMeshes() {
+    let thirdLevelCCData = this.findThirdLevelCCData();
+    for(let i=0;i<thirdLevelCCData.length;i++) {
+      let children = this.findDirectChildrenData(thirdLevelCCData[i]);
+      let base = this.getMeshByID(thirdLevelCCData[i].handleID as number);
+      let packing = (base.userData as UserObject).packing3;
+      for(let j=0;j<children.length;j++) {
+        let mesh = this.createMesh(50, 100, 50);
+        mesh.position.copy(packing[j].position);
+        packing[j].occupied = true;
+        let repdata = {} as UserObject;
+        repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.showchildren = false;
+        repdata.resourcedata = children[j];
+        mesh.userData = repdata;
+        this.createLines(base, mesh, 0x888888);
+        this.meshArray.push(mesh);
+      }
+    }
+  }
+
+  private createRestLevelCCMeshes() {
+    let restLevelCCData = this.findRestLevelCCData();
+    for(let i=0;i<restLevelCCData.length;i++) {
+      let children = this.findDirectChildrenData(restLevelCCData[i]);
+      let base = this.getMeshByID(restLevelCCData[i].handleID as number);
+      let packing = (base.userData as UserObject).packing3;
+      for(let j=0;j<children.length;j++) {
+        let mesh = this.createMesh(50, 100, 50);
+        mesh.position.copy(packing[j].position);
+        packing[j].occupied = true;
+        let repdata = {} as UserObject;
+        repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.showchildren = false;
+        repdata.resourcedata = children[j];
+        mesh.userData = repdata;
+        this.createLines(base, mesh, 0x888888);
+        this.meshArray.push(mesh);
+      }
+    }
+  }
+
+  private createCCBranches(id: number) {
+    let list = this.findChildrenIDBFS(id);
+    if(id === 0) {
+
+    }
+    list.forEach((b) => {
+
+    })
+  }
+
+
+
+
+  private getMeshByID(id: number) {
+    let mesh = new THREE.Mesh();
+    this.meshArray.forEach((m) => {
+      let uo = m.userData as UserObject;
+      if(typeof uo  !== 'undefined') {
+        if(uo.resourcedata.handleID === id) {
+          mesh = m;
+        }
+      }
+    })
+    return mesh;
+  }
+  private getMeshByResourceData(rd: ResourceData) {}
+
+  private findResourceDataByID(id: number) {
+    let communities = COMMUNITYDATASET;
+    let collections = COLLECTIONDATASET;
+    let cc = {} as ResourceData;
+    for(let i=0;i<communities.length;i++) {
+      if(communities[i].handleID === id) {
+        cc = communities[i];
+        break;
+      }
+    }
+    if(Object.keys(cc).length === 0) {
+      for(let i=0;i<collections.length;i++) {
+        if(collections[i].handleID === id) {
+          cc = collections[i];
+          break;
+        }
+      }
+    }
+    return cc;
+  }
+
+  private findTopLevelCommunityData() {
+    let resources: ResourceData[] = [];
+    let ids = this.findTopLevelCommunityIDs();
+    ids.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        resources.push(rd);
+      }
+    })
+    return resources;
+  }
+
+  private findSecondLevelCCData() {
+    let resources: ResourceData[] = [];
+    let ids = this.findSecondLevelCCIDs();
+    ids.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        resources.push(rd);
+      }
+    })
+    return resources;
+  }
+
+  private findThirdLevelCCData() {
+    let resources: ResourceData[] = [];
+    let ids = this.findThirdLevelCCIDs();
+    ids.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        resources.push(rd);
+      }
+    })
+    return resources;
+  }
+
+  private findFourthLevelCCData() {
+    let resources: ResourceData[] = [];
+    let ids = this.findFourthLevelCCIDs();
+    ids.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        resources.push(rd);
+      }
+    })
+    return resources;
+  }
+
+  private findRestLevelCCData() {
+    let resources: ResourceData[] = [];
+    let ids = this.findRestLevelCCIDs();
+    ids.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        resources.push(rd);
+      }
+    })
+    return resources;
+  }
+
+  private findDirectChildrenData(rd: ResourceData) {
+    let children = rd.children;
+    let dcd: ResourceData[] = [];
+    children.forEach((id) => {
+      let rd = this.findResourceDataByID(id);
+      if(Object.keys(rd).length > 0) {
+        dcd.push(rd);
+      }
+    })
+    return dcd;
+  }
+
+  private findTopLevelCommunityIDs() {
+    let comms: number[] = [];
+    let communities = COMMUNITYDATASET;
+    communities.forEach((c) => {
+      if(c.parent === 0) {
+        comms.push(c.handleID as number);
+      }
+    })
+    return comms;
+  }
+
+  private findSecondLevelCCIDs() {
+    let ids: number[] = [];
+    let tops = this.findTopLevelCommunityIDs();
+    tops.forEach((top) => {
+      let rd = this.findResourceDataByID(top);
+      if(Object.keys(rd).length > 0) {
+        rd.children.forEach((child) => {
+          ids.push(child);
+        })  
+      }
+  })
+    return ids;
+  }
+
+  private findThirdLevelCCIDs() {
+    let ids: number[] = [];
+    let seconds = this.findSecondLevelCCIDs();
+    seconds.forEach((second) => {
+      let rd = this.findResourceDataByID(second);
+      if(Object.keys(rd).length > 0) {
+        rd.children.forEach((child) => {
+          ids.push(child);
+        })  
+      }
+  })
+    return ids;
+  }
+
+  private findFourthLevelCCIDs() {
+    let ids: number[] = [];
+    let thirds = this.findThirdLevelCCIDs();
+    thirds.forEach((third) => {
+      let rd = this.findResourceDataByID(third);
+      if(Object.keys(rd).length > 0) {
+        rd.children.forEach((child) => {
+          ids.push(child);
+        })  
+      }
+  })
+    return ids;
+  }
+
+  private findRestLevelCCIDs() {
+    let ids: number[] = [];
+    let fourths = this.findFourthLevelCCIDs();
+    fourths.forEach((fourth) => {
+      let cids = this.findChildrenIDBFS(fourth);
+      cids.forEach((cid) => {
+        let rd = this.findResourceDataByID(cid);
+        if(Object.keys(rd).length > 0) {
+          rd.children.forEach((child) => {
+            ids.push(child);
+          })  
+        }
+      })
+    })
+    return ids;
   }
 
 }

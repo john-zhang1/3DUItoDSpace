@@ -1,7 +1,7 @@
 export interface UserObject {
-    packing3: { pos: THREE.Vector3; valid: number; }[],
-    packing2: { pos: THREE.Vector3; valid: number; }[],
-    showstatus: boolean,
+    packing3: SpherePacking[],
+    packing2: SpherePacking[],
+    showchildren: boolean,
     resourcedata: ResourceData
 }
 
@@ -10,7 +10,7 @@ export interface ResourceData {
     name: string,
     parent?: number,
     children: number[],
-    handle?: string,
+    handleID?: number,
     uuid?: string,
     strength?: number,
     logo?: string,
@@ -23,7 +23,7 @@ export interface CommunityData {
     name: string,
     parent: number,
     children: number[],
-    handle: string,
+    handleID: number,
     uuid: string,
     logo: string
 }
@@ -32,7 +32,7 @@ export interface CollectionData {
     resourcetype: ResourceType,
     name: string,
     children: number[],
-    handle: string,
+    handleID: number,
     uuid: string,
     logo: string
 }
@@ -42,7 +42,7 @@ export interface ItemData {
     resourcetype: ResourceType,
     name: string,
     owningcollection: number[],
-    handle: string,
+    handleID: number,
     uuid: string,
     files: {title: string, link: string}[],
     metadata: {key: string, value: string}[]
@@ -57,4 +57,14 @@ export const enum ResourceType {
     SITE = 5,
     GROUP = 6,
     EPERSON = 7
+}
+
+export interface SpherePacking {
+    position: THREE.Vector3,
+    occupied: boolean
+}
+
+export interface DistanceAndVertex {
+    distance: number,
+    vertext: SpherePacking
 }

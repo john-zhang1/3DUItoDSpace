@@ -19,14 +19,6 @@
     width: 250px;
 
 }
-.accordion {
-    list-style-type: none;
-    background: rgba(25, 25, 25, 0.5);
-    border: 1px solid rgba(45, 45, 45, 0.8);
-    border-bottom: 0;
-    border-radius: 2px;
-    margin-left: 0;
-}
 .moons {
     position: fixed;
     top: 0;
@@ -37,68 +29,4 @@
     list-style-type: none;
     right: 0;
     width: 250px;
-}
-div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, p, blockquote, th, td {
-    margin: 0;
-    padding: 0;
-}
-*, ::before, ::after {
-    box-sizing: inherit;
-}
-body {
-    font-family: 'Rajdhani-Regular', sans-serif;
-    background: black;
-    color: #f9f9f9;
-    letter-spacing: 0.02rem;
-    position: relative;
-    -webkit-font-smoothing: antialiased;
-}
-.earth-title {
-    font-family: 'Rajdhani-Bold', sans-serif;
-    font-size: 1.5rem;
-    border-bottom: 1px solid rgba(45, 45, 45, 0.8);
-    padding: 0.5rem 1rem;
-}
-.moons .accordion-title {
-    font-family: 'Rajdhani-Semibold', sans-serif;
-    font-size: 0.8125rem;
-}
-.accordion-title {
-    display: block;
-    padding: 0.5rem 1rem;
-    line-height: 1;
-    font-size: 0.75rem;
-    color: white;
-    position: relative;
-    border-bottom: 1px solid rgba(45, 45, 45, 0.8);
-}
-.accordion-title::before {
-    content: '+';
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    margin-top: -0.5rem;
-}
-a {
-    background-color: transparent;
-}
-table thead, table tbody, table tfoot {
-    border: none;
-    background-color: transparent;
-}
-.earth a {
-    color: #cccccc;
-}
-.earth input, .earth a, .earth button {
-    margin-bottom: 0;
-}
-.planet-name {
-    font-family: 'Rajdhani-Semibold', sans-serif;
-    font-size: 1.125rem;
-}
-.accordion-content {
-    padding: 1rem;
-    display: none;
-    border-bottom: 1px solid rgba(45, 45, 45, 0.8);
-    background-color: rgba(25, 25, 25, 0.5);
 }
