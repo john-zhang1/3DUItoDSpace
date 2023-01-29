@@ -17,7 +17,8 @@
     list-style-type: none;
     left: 0;
     width: 250px;
-
+    // height: 500px;
+    overflow: auto;
 }
 .moons {
     position: fixed;
@@ -30,3 +31,29 @@
     right: 0;
     width: 250px;
 }
+
+.mouse {
+    position: fixed;
+    background: rgba(25, 25, 25, 0.15);
+    z-index: 0;
+    border: 1px solid rgba(45, 45, 45, 0.85);
+    list-style-type: none;
+    width: 200px;
+}
+
+// .hiddenpane {
+//     display: none;
+// }
+
+// .inboxContainer {
+//     width: 40vw;
+//     height: 60vh;
+//     border: 1px solid black;
+//     margin: auto;
+//     position: absolute;
+//     top: 0;
+//     left: 0;
+//     bottom: 0;
+//     right: 0;
+//     overflow: auto;
+// }

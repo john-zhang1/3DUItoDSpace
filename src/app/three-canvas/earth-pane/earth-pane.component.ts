@@ -13,4 +13,7 @@ export class EarthPaneComponent {
   public getEarthName() {
     return this.paneInfo.name;
   }
+  public getDescription() {
+    return this.paneInfo.description;
+  }
 }

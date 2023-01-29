@@ -27,11 +27,22 @@ export class MoonsPaneComponent implements OnInit, AfterViewInit {
     return info;
   }
 
+  private getPaneInfoCollectionName() {
+    let name: string = '';
+    let rd = this.paneInfo.resourcedata;
+    if(typeof rd !== 'undefined') {
+      if(typeof name !== 'undefined') {
+        name = rd.name;
+      }
+    }
+    return name;
+  }
+
   public getPaneInfo() {
     let names: string[] = [];
     let children = this.getPaneInfoChildren();
     if(children.length === 0) {
-      names.push("This is a Collection");
+      names.push("Collection: " + this.getPaneInfoCollectionName());
     }
     children.forEach((id) => {
       let name = this.getObjName(id);

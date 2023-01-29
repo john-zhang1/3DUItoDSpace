@@ -3,7 +3,8 @@ import { ResourceData, ResourceType } from './three-models';
 export const SITEDATASET: ResourceData = 
   {
     resourcetype: ResourceType.SITE,
-    name: 'SHAREOK',
+    name: 'SHAREOK Repository',
+    description: 'SHAREOK is the joint institutional repository for the University of Oklahoma Libraries (OU), Oklahoma State University Libraries (OSU), and the University of Central Oklahoma Max Chambers Library (UCO). It serves as the home for the intellectual output of those institutions, such as: digital theses and dissertations, faculty publications, open access publications, open educational resources, institution-specific content and much more.<p>If you would like to place your works in the institutional repository, please contact your library: OU, OSU, or UCO. Digital assets placed in the repository are available to a global audience, and search engine optimization techniques are used to increase their visibility to researchers and thus their impact on the global community.<p>If you are an OU student submitting a master’s thesis or doctoral dissertation to the Graduate College via SHAREOK, please follow these instructions. For policies on embargoing your thesis or dissertation, please refer to the Graduate College Thesis/Dissertation Instruction Packet.<p>OSU students should follow the Thesis and Dissertation Guidelines posted in Canvas or email the Graduate College for more information.',
     parent: -1,
     children: [1, 6231, 47149],
     handleID: 0,
@@ -13,6 +14,7 @@ export const COMMUNITYDATASET: ResourceData[] = [
   {
     resourcetype: ResourceType.COMMUNITY,
     name: 'The University of Oklahoma',
+    description: 'To read about the policies that guide the use of the University of Oklahoma sub-communities and collections in SHAREOK, please download SHAREOK Institutional Repository: OU Policies and Guidelines from https://shareok.org/handle/11244/330071.',
     parent: 0,
     children: [300330, 301245, 33380, 54644, 34890, 15231, 54275, 21724, 324379, 28095, 52393, 329107, 301376, 10476, 7920, 47044, 23528],
     logo: '',
@@ -31,6 +33,7 @@ export const COMMUNITYDATASET: ResourceData[] = [
   {
     resourcetype: ResourceType.COMMUNITY,
     name: 'University of Central Oklahoma',
+    description: 'Founded in 1890 as one of the state\'s first institutions of higher learning, the University of Central Oklahoma exists to help students learn by providing transformative education experiences to students so that they may become productive, creative, ethical, and engaged citizens and leaders serving our global community.<p>UCO\'s SHAREOK community is maintained by Chambers Library\'s Digital Initiatives Working Group (DIWG). DIWG\'s mission is to create, enhance, preserve, and administer the library’s digital collections in the interest of furthering the library’s mission to connect the Central community to dynamic resources and services that support transformative learning. DIWG is focused on gathering materials created by UCO affiliates of a scholarly, creative, and/or research-related nature.<p>Chambers Library is committed to accurately and respectfully describing materials relating to underrepresented communities. Users encountering offensive or outdated terminology found on the library’s website, Central Search, SHAREOK, or elsewhere in the collection may submit a report to our metadata team. To learn more, visit the library’s Inclusive Metadata Initiative page.',
     parent: 0,
     children: [324290, 323718, 324291, 334573, 325294, 324284, 335238, 324286, 335107, 334575, 334574, 331084, 336455, 323776, 336514, 325399, 330731, 324287, 330016, 324289],
     logo: '',

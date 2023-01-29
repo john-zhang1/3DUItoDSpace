@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import * as TWEEN from '@tweenjs/tween.js';
 // import { GUI } from 'dat.gui';
-import { UserObject, ResourceData, SpherePacking, DistanceAndVertex } from './three-models';
+import { UserObject, ResourceData, SpherePacking, PackingHelper } from './three-models';
 import { SITEDATASET, COMMUNITYDATASET, COLLECTIONDATASET } from './mock-data';
+import { PerspectiveCamera, Vector2, Vector3 } from 'three';
 
 @Component({
   selector: 'ds-three-canvas',
@@ -63,8 +64,12 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   // public gui = new GUI();
   // public cubeFolder!: GUI;
 
+  public INTERSECTED = new THREE.Mesh();
+  public INTERSECTEDMTAERIAL: any = null;
+
   public earthPane = {} as ResourceData;
   public moonsPane = {} as UserObject;
+  public mousePane = {} as UserObject;
 
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
@@ -77,6 +82,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     const look = new THREE.Vector3();
     const raycaster = new THREE.Raycaster();
     const mouse = this.getMouse(event);
+    console.log("mouse pos: "+mouse.x+", "+mouse.y);
     // this.camera.updateMatrixWorld();
     raycaster.setFromCamera( mouse, this.camera );
     const intersects = raycaster.intersectObjects( this.meshArray, false );
@@ -88,6 +94,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       this.camera.updateProjectionMatrix();
     }
     if (intersects.length > 0 ) {
+      this.intersectionRestore();
+      document.querySelector('.mouse')?.classList.add('hiddenpane');
       // Info pane
       this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
       this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);
@@ -122,6 +130,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   @HostListener('window:dblclick', ['$event'])
   onDocumentMouseDownDBLClick(event: MouseEvent) {
     event.preventDefault();
+    this.intersectionRestore();
     const raycaster = new THREE.Raycaster();
     const mouse = this.getMouse(event);
     raycaster.setFromCamera( mouse, this.camera );
@@ -132,6 +141,41 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       let cz = intersects[0].object.position.z;  
       if(!(cx==0 && cy==0 && cz==0)) {
         this.createGroupMeshes(intersects[0].object as THREE.Mesh);
+      }
+    }
+  }
+
+
+  @HostListener('window:mousemove', ['$event'])
+  onDocumentMouseOver(event: MouseEvent) {
+    event.preventDefault();
+    let mouse = this.getMouse(event);
+    let raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera( mouse, this.camera );
+    const intersects = raycaster.intersectObjects( this.meshArray, false );
+    if (intersects.length > 0 ) {
+      if ( intersects[ 0 ].object !== this.INTERSECTED ) {
+        if ( Object.keys(this.INTERSECTED).length > 0 ) {
+          this.intersectionRestore();
+          }
+        this.INTERSECTED = intersects[ 0 ].object as THREE.Mesh;
+        this.INTERSECTEDMTAERIAL = (intersects[ 0 ].object as THREE.Mesh).material;
+        (document.querySelector('.mouse') as HTMLElement).style.display = 'block';
+        (intersects[0].object as THREE.Mesh).material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+        let ele = document.querySelector('.mouse') as HTMLElement;
+        let mousepaneposition = this.worldCoordToMouse2DCoord(intersects[ 0 ].object.position, ele);
+        ele.style.top = mousepaneposition.y + 'px'; ele.style.left = mousepaneposition.x + 'px';
+        this.camera.updateProjectionMatrix();
+      }
+      this.mousePane = this.getMousePaneInfo(intersects[0].object as THREE.Mesh);
+    }
+    else {
+      if (  Object.keys(this.INTERSECTED).length > 0  ) {
+        this.intersectionRestore();
+        this.mousePane = this.getMousePaneInfo(new THREE.Mesh());
+        // document.querySelector('.mouse')?.classList.add('hiddenpane');
+        // document.querySelector('.mouse')?.setAttribute('style','display: none')
+        (document.querySelector('.mouse') as HTMLElement).style.display = 'none';
       }
     }
   }
@@ -204,8 +248,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     this.configCamera();
     this.configRenderer();
     this.configControls();
-    this.createLight();
-    this.creatStars();
+    // this.createLight();
+    // this.creatStars();
     this.createInitGeometriesOnPlane();
     this.createSecondLevelCCMeshes();
     this.createThirdLevelCCMeshes();
@@ -407,53 +451,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     }
   }
 
-  createInitGeometriesOnPlane() {
-    let posArray2D = this.get2DPackingList(400, 100);
-    let posArray3D = this.get3DPackingList(400, 100);
-    let cData: ResourceData[] = [];
-    cData.push(SITEDATASET);
-    let tcd = this.findTopLevelCommunityData();
-    tcd.forEach((tc) => {
-      cData.push(tc);
-    })
-
-    for (let i = 0; i < cData.length; i++) {
-        let mesh: THREE.Mesh;
-        let repdata = {} as UserObject;
-        if(i == 0) {
-          mesh = this.createMesh(100, 100, 50, this.planetPics[0]);
-          mesh.position.set(0, 0, 0);
-          repdata.packing2 = posArray2D;
-          repdata.packing3 = posArray3D;
-          repdata.showchildren = true;
-          repdata.resourcedata = cData[i];
-          mesh.userData = repdata;
-        } else {
-          mesh = this.createMesh(100, 100, 50);
-          let ind =  4 * i - 4;
-          posArray2D[ind].occupied = true;
-          mesh.position.set(posArray2D[ind].position.x, posArray2D[ind].position.y, posArray2D[ind].position.z);
-          repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
-          repdata.packing3 = this.getChildrenOutward3DPacking(400, 100, mesh);
-          repdata.showchildren = false;
-          repdata.resourcedata = cData[i];
-          mesh.userData = repdata;
-          this.createLines(this.meshArray[0], mesh, 0x888888);
-        }
-        // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
-        // this.scene.add(mesh);
-        this.meshArray.push(mesh);
-        // userdata
-        // mesh.userData =  iData;
-        if(i==0) {
-          // this.setupDatGui(mesh);
-        }
-    }
-    if(this.meshArray.length > 0) {
-      this.currentObj = this.meshArray[0];
-    }
-  }
-
   createGroupMeshes(center: THREE.Mesh) {
     let posArray = center.userData as SpherePacking[];
     if(posArray.length == 0) {
@@ -643,8 +640,12 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return info;
   }
 
-  private getMoonsPaneInfo(earth: THREE.Mesh) {
-    let info = earth.userData as UserObject;
+  private getMoonsPaneInfo(moons: THREE.Mesh) {
+    let info = moons.userData as UserObject;
+    return info;
+  }
+  private getMousePaneInfo(mouse: THREE.Mesh) {
+    let info = mouse.userData as UserObject;
     return info;
   }
 
@@ -655,7 +656,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let aPackings = this.tweakedPackingList(base, packings);
     let distanceToCenter = base.position.distanceTo(center);
     let minDistance = Math.sqrt(Math.pow(distanceToCenter, 2) + Math.pow(distance, 2));
-    let distanceAndVertex: DistanceAndVertex[] = [];
     aPackings.forEach((vertex) => {
       let dist = vertex.position.distanceTo(center);
       if(dist > minDistance) {
@@ -664,26 +664,27 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     })
     return oPacking;
   }
-  private getChildrenOutward3DPackingSort(distance: number, radius: number, base: THREE.Mesh) {
+  private getChildrenOutward3DPackingSorted(distance: number, radius: number, base: THREE.Mesh) {
     let oPacking = [] as SpherePacking[];
     let center = new THREE.Vector3(0, 0, 0);
     let packings = this.get3DPackingList(distance, radius);
     let aPackings = this.tweakedPackingList(base, packings);
     let distanceToCenter = base.position.distanceTo(center);
     let minDistance = Math.sqrt(Math.pow(distanceToCenter, 2) + Math.pow(distance, 2));
-    let distanceAndVertex: DistanceAndVertex[] = [];
+    let helpers: PackingHelper[] = [];
     aPackings.forEach((vertex) => {
       let dist = vertex.position.distanceTo(center);
       if(dist > minDistance) {
-        let dav = {} as DistanceAndVertex;
-        dav.distance = dist;
-        dav.vertext = vertex;
-        distanceAndVertex.push(dav);
+        // oPacking.push(vertex);
+        let helper = {} as PackingHelper;
+        helper.distance = dist;
+        helper.packing = vertex;
+        helpers.push(helper);
       }
-      let dvArray = distanceAndVertex.sort((a, b) => (a.distance < b.distance) ? -1 : 1);
-      dvArray.forEach((dv) => {
-        oPacking.push(dv.vertext);
-      })
+    })
+    let sortedHelpers = helpers.sort((a, b) => b.distance - a.distance); 
+    sortedHelpers.forEach((helper) => {
+      oPacking.push(helper.packing);
     })
     return oPacking;
   }
@@ -753,7 +754,53 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return children;
   }
 
-  private createTopLevelCommunityMeshesOnPlane() {}
+  
+  createInitGeometriesOnPlane() {
+    let posArray2D = this.get2DPackingList(400, 100);
+    let posArray3D = this.get3DPackingList(400, 100);
+    let cData: ResourceData[] = [];
+    cData.push(SITEDATASET);
+    let tcd = this.findTopLevelCommunityData();
+    tcd.forEach((tc) => {
+      cData.push(tc);
+    })
+
+    for (let i = 0; i < cData.length; i++) {
+        let mesh: THREE.Mesh;
+        let repdata = {} as UserObject;
+        if(i == 0) {
+          mesh = this.createMesh(100, 100, 50, this.planetPics[0]);
+          mesh.position.set(0, 0, 0);
+          repdata.packing2 = posArray2D;
+          repdata.packing3 = posArray3D;
+          repdata.showchildren = true;
+          repdata.resourcedata = cData[i];
+          mesh.userData = repdata;
+        } else {
+          mesh = this.createMesh(100, 100, 50);
+          let ind =  4 * i - 4;
+          posArray2D[ind].occupied = true;
+          mesh.position.set(posArray2D[ind].position.x, posArray2D[ind].position.y, posArray2D[ind].position.z);
+          repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
+          repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 100, mesh);
+          repdata.showchildren = false;
+          repdata.resourcedata = cData[i];
+          mesh.userData = repdata;
+          this.createLines(this.meshArray[0], mesh, 0x888888);
+        }
+        // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
+        // this.scene.add(mesh);
+        this.meshArray.push(mesh);
+        // userdata
+        // mesh.userData =  iData;
+        if(i==0) {
+          // this.setupDatGui(mesh);
+        }
+    }
+    if(this.meshArray.length > 0) {
+      this.currentObj = this.meshArray[0];
+    }
+  }
 
   private createSecondLevelCCMeshes() {
     let topLevelCommunityData = this.findTopLevelCommunityData();
@@ -767,7 +814,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         packing[j].occupied = true;
         let repdata = {} as UserObject;
         repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
-        repdata.packing3 = this.getChildrenOutward3DPacking(400, 100, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 100, mesh);
         repdata.showchildren = false;
         repdata.resourcedata = children[j];
         mesh.userData = repdata;
@@ -789,7 +836,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         packing[j].occupied = true;
         let repdata = {} as UserObject;
         repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
-        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 50, mesh);
         repdata.showchildren = false;
         repdata.resourcedata = children[j];
         mesh.userData = repdata;
@@ -811,7 +858,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         packing[j].occupied = true;
         let repdata = {} as UserObject;
         repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
-        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 50, mesh);
         repdata.showchildren = false;
         repdata.resourcedata = children[j];
         mesh.userData = repdata;
@@ -833,7 +880,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         packing[j].occupied = true;
         let repdata = {} as UserObject;
         repdata.packing2 = this.getChildrenOutward2DPacking(400, 50, mesh);
-        repdata.packing3 = this.getChildrenOutward3DPacking(400, 50, mesh);
+        repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 50, mesh);
         repdata.showchildren = false;
         repdata.resourcedata = children[j];
         mesh.userData = repdata;
@@ -1033,6 +1080,46 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return ids;
   }
 
+  private intersectionRestore() {
+    this.INTERSECTED.material = this.INTERSECTEDMTAERIAL;
+    this.INTERSECTED = new THREE.Mesh();
+    this.INTERSECTEDMTAERIAL = null;
+  }
+
+  private worldCoordToMouse2DCoord(position: Vector3, div: HTMLElement) {
+    let pos = position.clone();
+    pos.project( this.camera );
+    let offset = this.findOffset(div);
+
+    pos.x = ( pos.x + 1) * this.canvas.clientWidth / 2  + offset.x;
+    pos.y = - ( pos.y - 1) * this.canvas.clientHeight / 2 + offset.y;
+    pos.z = 0;
+    return pos;
+  }
+
+  private findOffset(div: HTMLElement) {
+    let pos = new Vector2();
+    if (div.offsetParent !== null) {
+      do {
+        pos.x += div.offsetLeft;
+        pos.y += div.offsetTop;
+      } while (div.offsetParent);
+    }
+    console.log("Offset: "+ pos);
+    return pos;
+  }    
+// world coordinates to 2D mouse coordinates in ThreeJS
+  // private toScreenXY(position: Vector3, camera: PerspectiveCamera, div: ElementRef) {
+  //   var pos = position.clone();
+  //   let projScreenMat = new THREE.Matrix4();
+  //   projScreenMat.multiply(camera.projectionMatrix, camera.matrixWorldInverse);
+  //   projScreenMat.multiplyVector3(pos);
+  //   var offset = findOffset(div);
+  //   return { x: (pos.x + 1) * div.clientWidth / 2 + offset.left,
+  //       y: (-pos.y + 1) * div.clientHeight / 2 + offset.top
+  //   };
+
+// }
 }
 
 // Click on an item button: 

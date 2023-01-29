@@ -8,6 +8,7 @@ export interface UserObject {
 export interface ResourceData {
     resourcetype: ResourceType,
     name: string,
+    description?: string,
     parent?: number,
     children: number[],
     handleID?: number,
@@ -64,7 +65,7 @@ export interface SpherePacking {
     occupied: boolean
 }
 
-export interface DistanceAndVertex {
+export interface PackingHelper {
     distance: number,
-    vertext: SpherePacking
+    packing: SpherePacking
 }
