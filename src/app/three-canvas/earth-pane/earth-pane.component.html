@@ -1,2 +1,30 @@
-<div class="earth-title">{{ getEarthName() }}</div>
+<!-- <div class="earth-title">{{ getEarthName() }}</div>
 <div class="description" [innerHTML]="getDescription()"></div>
+ -->
+ <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-tabs">
+	<li [ngbNavItem]="1">
+		<a ngbNavLink>One</a>
+		<ng-template ngbNavContent class="earth-title">
+			<div class="earth-title">{{ getEarthName() }}</div>
+            <div class="description" [innerHTML]="getDescription()"></div>
+		</ng-template>
+	</li>
+	<li [ngbNavItem]="2">
+		<a ngbNavLink>Two</a>
+		<ng-template ngbNavContent>
+			<p>
+				When the expression evaluates to true, Angular renders the template. 
+			</p>
+		</ng-template>
+	</li>
+	<li [ngbNavItem]="3">
+		<a ngbNavLink>Three</a>
+		<ng-template ngbNavContent>
+			<p>
+				Sed commodo, leo at suscipit dictum, quam est porttitor sapien, eget sodales nibh elit id diam. 
+			</p>
+		</ng-template>
+	</li>
+</ul>
+
+<div [ngbNavOutlet]="nav" class="mt-2"></div>

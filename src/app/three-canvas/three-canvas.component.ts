@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import * as TWEEN from '@tweenjs/tween.js';
 // import { GUI } from 'dat.gui';
-import { UserObject, ResourceData, SpherePacking, PackingHelper } from './three-models';
+import { UserObject, ResourceData, SpherePacking, PackingHelper, ResourceType } from './three-models';
 import { SITEDATASET, COMMUNITYDATASET, COLLECTIONDATASET } from './mock-data';
-import { PerspectiveCamera, Vector2, Vector3 } from 'three';
+import { Mesh, PerspectiveCamera, Vector2, Vector3 } from 'three';
 
 @Component({
   selector: 'ds-three-canvas',
@@ -14,7 +14,9 @@ import { PerspectiveCamera, Vector2, Vector3 } from 'three';
 })
 export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.loadData();
+  }
 
   public renderer!: THREE.WebGLRenderer;
   public scene!: THREE.Scene;
@@ -47,6 +49,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
   public meshArray: THREE.Mesh[] = [];
   public lines: THREE.Line[] = [];
+  public meshMap = new Map<number, Mesh>();
+  public resourcedataMap = new Map<number, ResourceData>();
 
   public targetRotationX = 0.05; // rotation vars, tweak these to tweak the speed while rotating an object
   public targetRotationY = 0.05;
@@ -60,6 +64,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   // Array that stores pictures
   public planetPics = ['assets/textures/earth_atmos_2048.jpg', 'assets/textures/earthbump1k.jpg', 'assets/textures/earthmap1k.jpg', 'assets/textures/jupiter2_1k.jpg', 'assets/textures/land_ocean_ice_cloud_2048.jpg', 'assets/textures/mars_1k_color.jpg', 'assets/textures/mercurymap.jpg', 'assets/textures/saturnmap.jpg', 'assets/textures/neptunemap.jpg'];
   public look = new THREE.Vector3(0, 0, 0);
+  public pics = ['assets/textures/new/earth_color.jpg', 'assets/textures/new/jupiter_color.jpg', 'assets/textures/new/mars_color.jpg', 'assets/textures/new/neptune_color.jpg', 'assets/textures/new/pluto_color.jpg', 'assets/textures/new/saturn_color.jpg', 'assets/textures/new/venus_color.jpg'];
 
   // public gui = new GUI();
   // public cubeFolder!: GUI;
@@ -82,7 +87,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     const look = new THREE.Vector3();
     const raycaster = new THREE.Raycaster();
     const mouse = this.getMouse(event);
-    console.log("mouse pos: "+mouse.x+", "+mouse.y);
     // this.camera.updateMatrixWorld();
     raycaster.setFromCamera( mouse, this.camera );
     const intersects = raycaster.intersectObjects( this.meshArray, false );
@@ -95,7 +99,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     }
     if (intersects.length > 0 ) {
       this.intersectionRestore();
-      document.querySelector('.mouse')?.classList.add('hiddenpane');
       // Info pane
       this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
       this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);
@@ -173,8 +176,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       if (  Object.keys(this.INTERSECTED).length > 0  ) {
         this.intersectionRestore();
         this.mousePane = this.getMousePaneInfo(new THREE.Mesh());
-        // document.querySelector('.mouse')?.classList.add('hiddenpane');
-        // document.querySelector('.mouse')?.setAttribute('style','display: none')
         (document.querySelector('.mouse') as HTMLElement).style.display = 'none';
       }
     }
@@ -251,10 +252,11 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     // this.createLight();
     // this.creatStars();
     this.createInitGeometriesOnPlane();
-    this.createSecondLevelCCMeshes();
-    this.createThirdLevelCCMeshes();
-    this.createFourthLevelCCMeshes();
-    this.createRestLevelCCMeshes();
+    // this.createSecondLevelCCMeshes();
+    // this.createThirdLevelCCMeshes();
+    // this.createFourthLevelCCMeshes();
+    // this.createRestLevelCCMeshes();
+    // this.createItemMeshes(this.getMeshByID(10476));
     // this.createGroupMeshes();
     // this.createGeometries();
     // this.createGeometriesOnPlane();
@@ -380,7 +382,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 //     objects.push(sphere);
 //     return sphere;
 // }
-  createGeometries() {
+  public createGeometries() {
     let posArray = this.get3DPackingList(1200, 150);
     let storedPosArray = this.get3DPackingList(800, 100);
 
@@ -570,11 +572,11 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return positionArray;
   }
 
-  public createLines(mesh1: THREE.Mesh, mesh2: THREE.Mesh, linecolor?: number) {
+  public createLines_0(mesh1: THREE.Mesh, mesh2: THREE.Mesh, linecolor?: number) {
     if (typeof linecolor === 'undefined') {
       linecolor = 0x6699CC;
     }
-    const material = new THREE.LineBasicMaterial( { color: linecolor } );
+    const material = new THREE.LineBasicMaterial( { color: linecolor } );this.scene.traverse
     const points = [];
     points.push( mesh1.position );
     points.push( mesh2.position );    
@@ -582,6 +584,72 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     const line = new THREE.Line( geometry, material );
     this.scene.add( line );
     this.lines.push(line);
+  }
+  public createLines(mesh1: THREE.Mesh, mesh2: THREE.Mesh, linecolor?: number) {
+    const parameters = [[ 0.25, 0xff7700, 1 ], [ 0.5, 0xff9900, 1 ], [ 0.75, 0xffaa00, 0.75 ], [ 1, 0xffaa00, 0.5 ], [ 1.25, 0x000833, 0.8 ],
+  [ 3.0, 0xaaaaaa, 0.75 ], [ 3.5, 0xffffff, 0.5 ], [ 4.5, 0xffffff, 0.25 ], [ 5.5, 0xffffff, 0.125 ]];
+
+    // const material = new THREE.LineBasicMaterial( { color: 0xff7700, opacity: 0.125} );
+    // const material = new THREE.LineBasicMaterial( { color: 0xffaa00, linewidth: 0.5, opacity: 0.125, vertexColors: true });
+    const material = new THREE.LineBasicMaterial( { color: 0xffaa00, linewidth: 0.5, opacity: 0.125 });
+    const points = [];
+    points.push( mesh1.position );
+    points.push( mesh2.position );    
+    const geometry = new THREE.BufferGeometry().setFromPoints( points );
+    const line = new THREE.Line( geometry, material );
+    this.scene.add( line );
+    this.lines.push(line);
+  }
+  public createItemMeshes(object: THREE.Scene | THREE.Mesh) {
+    if(typeof object === 'undefined') {
+      object = this.scene;
+    }
+
+    // const parameters = [[ 0.25, 0xff7700, 1 ], [ 0.5, 0xff9900, 1 ], [ 0.75, 0xffaa00, 0.75 ], [ 1, 0xffaa00, 0.5 ], [ 1.25, 0x000833, 0.8 ], [ 3.0, 0xaaaaaa, 0.75 ], [ 3.5, 0xffffff, 0.5 ], [ 4.5, 0xffffff, 0.25 ], [ 5.5, 0xffffff, 0.125 ]];
+    const parameters = [[ 0.25, 0xff7700, 1 ], [ 0.5, 0xff9900, 1 ], [ 0.75, 0xffaa00, 0.75 ], [ 1, 0xffaa00, 0.5 ]];
+
+    const lsg = this.createLineSegmentGeometry();
+
+    for ( let i = 0; i < parameters.length; ++ i ) {
+
+      const p = parameters[ i ];
+
+      const material = new THREE.LineBasicMaterial( { color: p[ 1 ], opacity: p[ 2 ] } );
+
+      const line = new THREE.LineSegments( lsg, material );
+      line.scale.x = line.scale.y = line.scale.z = p[ 0 ];
+      // line.rotation.y = Math.random() * Math.PI;
+      line.updateMatrix();
+      object.add( line );
+
+    }
+
+    // const material = new THREE.LineBasicMaterial( { color: linecolor } );this.scene.traverse
+    // const points = [];
+    // points.push( mesh1.position );
+    // points.push( mesh2.position );    
+    // const geometry = new THREE.BufferGeometry().setFromPoints( points );
+    // const line = new THREE.Line( geometry, material );
+    // this.scene.add( line );
+    // this.lines.push(line);
+  }
+
+    public createLineSegmentGeometry() {
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const vertex = new THREE.Vector3();
+    for ( let i = 0; i < 10000; i ++ ) {
+      vertex.x = Math.random() * 2 - 1;
+      vertex.y = Math.random() * 2 - 1;
+      vertex.z = Math.random() * 2 - 1;
+      vertex.normalize();
+      vertex.multiplyScalar( 100 );
+      vertices.push( vertex.x, vertex.y, vertex.z );
+      vertex.multiplyScalar( Math.random() * 0.09 + 1 );
+      vertices.push( vertex.x, vertex.y, vertex.z );
+    }
+    geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    return geometry;
   }
 
   public get2DPackingList(dist: number, rad: number, vertex?: THREE.Vector3, offset?: number ) {
@@ -777,7 +845,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
           repdata.resourcedata = cData[i];
           mesh.userData = repdata;
         } else {
-          mesh = this.createMesh(100, 100, 50);
+          let index = Math.floor(Math.random() * this.pics.length);
+          mesh = this.createMesh(100, 100, 50, this.pics[index]);
           let ind =  4 * i - 4;
           posArray2D[ind].occupied = true;
           mesh.position.set(posArray2D[ind].position.x, posArray2D[ind].position.y, posArray2D[ind].position.z);
@@ -791,6 +860,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         // mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 4 + 2;
         // this.scene.add(mesh);
         this.meshArray.push(mesh);
+        this.meshMap.set(cData[i].handleID as number, mesh);
         // userdata
         // mesh.userData =  iData;
         if(i==0) {
@@ -809,8 +879,13 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       let base = this.getMeshByID(topLevelCommunityData[i].handleID as number);
       let packing = (base.userData as UserObject).packing3;
       for(let j=0;j<children.length;j++) {
-        let mesh = this.createMesh(50, 100, 50);
-        mesh.position.copy(packing[j].position);
+        let index = Math.floor(Math.random() * this.pics.length);
+        let mesh = this.createMesh(50, 100, 50, this.pics[index]);
+        if(children[j].resourcetype === ResourceType.COLLECTION) {
+          mesh.position.copy(packing[j].position.multiplyScalar(1.5));
+        } else {
+          mesh.position.copy(packing[j].position);
+        }
         packing[j].occupied = true;
         let repdata = {} as UserObject;
         repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, mesh);
@@ -820,6 +895,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         mesh.userData = repdata;
         this.createLines(base, mesh, 0x888888);
         this.meshArray.push(mesh);
+        this.meshMap.set(children[j].handleID as number, mesh);
       }
     }    
   }
@@ -842,6 +918,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         mesh.userData = repdata;
         this.createLines(base, mesh, 0x888888);
         this.meshArray.push(mesh);
+        this.meshMap.set(children[j].handleID as number, mesh);
       }
     }
   }
@@ -864,6 +941,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         mesh.userData = repdata;
         this.createLines(base, mesh, 0x888888);
         this.meshArray.push(mesh);
+        this.meshMap.set(children[j].handleID as number, mesh);
       }
     }
   }
@@ -886,6 +964,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         mesh.userData = repdata;
         this.createLines(base, mesh, 0x888888);
         this.meshArray.push(mesh);
+        this.meshMap.set(children[j].handleID as number, mesh);
       }
     }
   }
@@ -1105,21 +1184,147 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         pos.y += div.offsetTop;
       } while (div.offsetParent);
     }
-    console.log("Offset: "+ pos);
     return pos;
-  }    
-// world coordinates to 2D mouse coordinates in ThreeJS
-  // private toScreenXY(position: Vector3, camera: PerspectiveCamera, div: ElementRef) {
-  //   var pos = position.clone();
-  //   let projScreenMat = new THREE.Matrix4();
-  //   projScreenMat.multiply(camera.projectionMatrix, camera.matrixWorldInverse);
-  //   projScreenMat.multiplyVector3(pos);
-  //   var offset = findOffset(div);
-  //   return { x: (pos.x + 1) * div.clientWidth / 2 + offset.left,
-  //       y: (-pos.y + 1) * div.clientHeight / 2 + offset.top
-  //   };
+  }
 
-// }
+  public async browseMeshByID(id: number) {
+    if(this.meshMap.has(id)) {
+      this.createChildrenChain(id);
+
+      // let mesh = this.meshMap.get(id) as Mesh;
+      // await new Promise(f => setTimeout(f, 400));
+      // const look = new THREE.Vector3();
+      // const moveCam = (camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) => {
+      //   this.camera.position.x = camiX;
+      //   this.camera.position.y = camiY;
+      //   this.camera.position.z = camiZ;
+      //   this.camera.lookAt(look);
+      //   this.camera.updateProjectionMatrix();
+      // }
+      // if ( Object.keys((mesh.userData as UserObject).resourcedata).length > 0 ) {
+      //   let cx = mesh.position.x;
+      //   let cy = mesh.position.y;
+      //   let cz = mesh.position.z;  
+      //   if(!(cx==0 && cy==0 && cz==0)) {
+      //     this.controls.enabled = false;
+      //     TWEEN.removeAll();
+      //     this.touchTween = new TWEEN.Tween( {x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z} )
+      //       .to( {x: mesh.position.x, y: mesh.position.y, z: mesh.position.z }, 400 )
+      //       .easing(TWEEN.Easing.Cubic.InOut)
+      //       .onUpdate(function(o) {
+      //         moveCam(o.x, o.y, o.z, look)
+      //       })
+      //       .start()
+      //       await new Promise(f => setTimeout(f, 400));
+      //       this.controls.enabled = true;
+      //       this.earthPane = this.getEarthPaneInfo(mesh);
+      //       this.moonsPane = this.getMoonsPaneInfo(mesh);    
+      //   } else {
+      //     this.controls.enabled = true;
+      //   }
+      // } else {
+      //   this.controls.enabled = true;
+      //   this.targetRotationX = 0;
+      //   this.targetRotationX = 0;
+      // }
+    } else {
+      this.createParentChain(id);
+                this.controls.enabled = true;
+    }
+  }
+
+  public loadData() {
+    let siteData = SITEDATASET;
+    let communityData = COMMUNITYDATASET;
+    let collectiondata = COLLECTIONDATASET;
+    this.resourcedataMap.set(0, siteData);
+    communityData.forEach((c) => {
+      this.resourcedataMap.set(c.handleID as number, c);
+    })
+    collectiondata.forEach((c) => {
+      this.resourcedataMap.set(c.handleID as number, c);
+    })
+  }
+
+  // Find a chain of meshes that don't exist in space 
+  private findVacantParentChain(id: number) {
+    let chain: number[] = [];
+    while(!this.meshMap.has(id)) {
+      if(this.resourcedataMap.has(id)) {
+        chain.push(id);
+        let pid = (this.resourcedataMap.get(id) as ResourceData).parent as number;
+        id = pid;
+      } else {
+        return [];
+      }
+    }
+    return chain;
+  }
+
+  private createParentChain(id: number) {
+    let chain = this.findVacantParentChain(id).reverse();
+    console.log("chain length: " + chain.length);
+    if(chain.length > 0) {
+      chain.forEach((c) => {
+        let index = Math.floor(Math.random() * this.pics.length);
+        let mesh = this.createMesh(50, 100, 50, this.pics[index]);
+        let parentID = (this.resourcedataMap.get(id) as ResourceData).parent as number;
+        let parentMesh = this.meshMap.get(parentID) as Mesh;
+        let packing = (parentMesh.userData as UserObject).packing3;
+        let occupiedFlag = false;
+        for(let i=0;i<packing.length;i++) {
+          if(!occupiedFlag) {
+            if(!packing[i].occupied) {
+              mesh.position.copy(packing[i].position);
+              packing[i].occupied = true;
+              mesh.userData = this.generateUserData(c, mesh, true);
+              this.createLines(this.meshMap.get(parentID) as Mesh, mesh, 0x888888);
+              this.meshArray.push(mesh);
+              this.meshMap.set((this.resourcedataMap.get(c) as ResourceData).handleID as number, mesh);
+              occupiedFlag = true;
+            }
+          }
+        }
+      })
+    }
+  }
+
+  private createChildrenChain(id: number) {
+    let chain = this.findChildrenIDBFS(id);
+    console.log("Children chain length: "+chain.length);
+    for(let i=0;i<chain.length;i++) {
+      let resourcedata = this.resourcedataMap.get(chain[i]) as ResourceData;
+      if(!this.meshMap.has(chain[i])) {
+        let parent = this.meshMap.get(resourcedata.parent) as Mesh;
+        let packing = (parent?.userData as UserObject).packing3;
+        let mesh = this.createMesh(50, 100, 50);
+        let occupiedFlag = false;
+        for(let j=0;j<packing.length;j++) {
+          if(!occupiedFlag) {
+            if(!packing[j].occupied) {
+              mesh.position.copy(packing[j].position);
+              packing[j].occupied = true;
+              mesh.userData = this.generateUserData(chain[i], mesh, true);
+              this.createLines(parent, mesh, 0x888888);
+              this.meshArray.push(mesh);
+              this.meshMap.set(chain[i], mesh);
+              occupiedFlag = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private generateUserData(id: number, base: Mesh, showstatus: boolean) {
+    let repdata = {} as UserObject;
+    repdata.packing2 = this.getChildrenOutward2DPacking(400, 100, base);
+    repdata.packing3 = this.getChildrenOutward3DPackingSorted(400, 100, base);
+    repdata.showchildren = showstatus;
+    repdata.resourcedata = this.resourcedataMap.get(id) as ResourceData;
+    return repdata;
+  }
+
 }
 
 // Click on an item button: 

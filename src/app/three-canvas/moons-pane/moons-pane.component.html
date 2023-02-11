@@ -1,4 +1,15 @@
-<div class="accordion-title">Moons Pane</div>
-<div class="accordion-title moons-list" role="tablist" *ngFor="let section of getPaneInfo()">
-    <div>{{ section }}</div>
+<div class="mb-3 row">
+    <div class="col">
+        <input id="typeahead-prevent-manual-entry" type="text" class="form-control" [(ngModel)]="model" (selectItem)="selectedItem($event)"
+            [ngbTypeahead]="search" [inputFormatter]="formatter" [resultFormatter]="formatter" [editable]="false" />
+    </div>
 </div>
+<hr />
+
+<div class="accordion-title moons-list"
+    *ngFor="let id of getPaneResourceData()?.children | slice: (currentPage-1) * pageSize : (currentPage-1) * pageSize + pageSize">
+    <div (click)="browseById(id)">{{ getObjName(id) }}</div>
+</div>
+
+<ngb-pagination [pageSize]="pageSize" [collectionSize]="getCollectionSize()" [(page)]="currentPage" [maxSize]="2"
+    size="sm" [class]="getClass()" aria-label="Default pagination"></ngb-pagination>

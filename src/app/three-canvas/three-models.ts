@@ -1,3 +1,5 @@
+import { Mesh } from "three";
+
 export interface UserObject {
     packing3: SpherePacking[],
     packing2: SpherePacking[],
@@ -9,14 +11,14 @@ export interface ResourceData {
     resourcetype: ResourceType,
     name: string,
     description?: string,
-    parent?: number,
+    parent: number,
     children: number[],
     handleID?: number,
     uuid?: string,
     strength?: number,
     logo?: string,
-    files?: {title: string, link: string}[],
-    metadata?: {key: string, value: string}[]
+    files?: string[],
+    metadata?: MetadataPair[];
 }
 
 export interface CommunityData {
@@ -32,12 +34,12 @@ export interface CommunityData {
 export interface CollectionData {
     resourcetype: ResourceType,
     name: string,
+    parent: number
     children: number[],
     handleID: number,
     uuid: string,
     logo: string
 }
-
 
 export interface ItemData {
     resourcetype: ResourceType,
@@ -68,4 +70,19 @@ export interface SpherePacking {
 export interface PackingHelper {
     distance: number,
     packing: SpherePacking
+}
+
+export interface MoonPair {
+    id: number,
+    name: string
+}
+
+export type MetadataPair = [string, string | number]
+
+export interface Item {
+    content: string,
+    id: string,
+    type: string,
+    items: Item[],
+    focused: Item
 }

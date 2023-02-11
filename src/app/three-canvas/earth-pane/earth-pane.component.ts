@@ -8,6 +8,8 @@ import { ResourceData } from '../three-models';
 })
 export class EarthPaneComponent {
 
+  active = 1;
+
   @Input() paneInfo = {} as ResourceData;
 
   public getEarthName() {

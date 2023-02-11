@@ -94,3 +94,50 @@ table thead, table tbody, table tfoot {
     border-bottom: 1px solid rgba(45, 45, 45, 0.8);
     background-color: rgba(25, 25, 25, 0.5);
 }
+input.search-query {
+    background: rgba(25, 25, 25, 0.5);
+    background-color: transparent;
+}
+
+
+.search-container {
+    float: right;
+  }
+
+ input[type=text] {
+    // padding: 6px;
+    // margin-top: 8px;
+    font-size: 12px;
+    border: none;
+  }
+  
+.search-container button {
+    float: right;
+    // padding: 6px 10px;
+    // margin-top: 8px;
+    // margin-right: 16px;
+    background: #ddd;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+  }
+   .search-container button:hover {
+    background: #ccc;
+  }
+
+  ngb-pagination li {
+    &:first-child a {
+      span {
+        display: none;
+      }
+      &:before {
+        /* provide your content here */
+      }
+    }
+  }
+  .pactive {
+    display: block;
+  }
+  .depactive {
+    display: none;
+  }

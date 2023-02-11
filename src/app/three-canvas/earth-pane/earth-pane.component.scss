@@ -44,7 +44,7 @@ body {
     color: white;
     position: relative;
     border-bottom: 1px solid rgba(45, 45, 45, 0.8);
-    text-align: center;
+    // text-align: center;
 }
 
 .accordion-title {
@@ -91,4 +91,8 @@ p {
     color: white;
     position: relative;
     border-bottom: 1px solid rgba(45, 45, 45, 0.8);
+}
+
+.mt-2.tab-content {
+    color: white;
 }
