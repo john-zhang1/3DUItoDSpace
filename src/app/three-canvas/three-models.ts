@@ -43,12 +43,15 @@ export interface CollectionData {
 
 export interface ItemData {
     resourcetype: ResourceType,
-    name: string,
+    title: string[],
+    author?: string[],
     owningcollection: number[],
-    handleID: number,
+    abstract?: string[],
+    handle: string,
+    issued: string[],
     uuid: string,
-    files: {title: string, link: string}[],
-    metadata: {key: string, value: string}[]
+    files?: string[],
+    metadata?: {key: string, value: string}[]
 }
 
 export const enum ResourceType {
@@ -86,3 +89,32 @@ export interface Item {
     items: Item[],
     focused: Item
 }
+
+export interface NestedResourceNode {
+    id: number,
+    name: string,
+    strength: number,
+    children?: NestedResourceNode[]
+}
+
+export interface FlatResourceNode {
+    id: number,
+    expandable: boolean
+    name: string,
+    level: number,
+    isExpanded?: boolean,
+    strength: number
+  }
+
+  export interface SimpleNode {
+    id: number,
+    name: string,
+    level: number
+  }
+
+export interface ExampleFlatNode {
+    expandable: boolean,
+    name: string,
+    level: number,
+    isExpanded?: boolean
+  }

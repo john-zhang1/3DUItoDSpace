@@ -1,14 +1,17 @@
-import { MetadataPair, ResourceData, ResourceType } from './three-models';
+import { ResourceData, ResourceType } from './three-models';
 
-export const SITEDATASET: ResourceData = 
+export const SITEDATASET: ResourceData[] = [
   {
     resourcetype: ResourceType.SITE,
     name: 'SHAREOK Repository',
-    description: '<p>SHAREOK is the joint institutional repository for the University of Oklahoma Libraries (OU), Oklahoma State University Libraries (OSU), and the University of Central Oklahoma Max Chambers Library (UCO). It serves as the home for the intellectual output of those institutions, such as: digital theses and dissertations, faculty publications, open access publications, open educational resources, institution-specific content and much more.<p>If you would like to place your works in the institutional repository, please contact your library: OU, OSU, or UCO. Digital assets placed in the repository are available to a global audience, and search engine optimization techniques are used to increase their visibility to researchers and thus their impact on the global community.<p>If you are an OU student submitting a master’s thesis or doctoral dissertation to the Graduate College via SHAREOK, please follow these instructions. For policies on embargoing your thesis or dissertation, please refer to the Graduate College Thesis/Dissertation Instruction Packet.<p>OSU students should follow the Thesis and Dissertation Guidelines posted in Canvas or email the Graduate College for more information.',
+    description: '<p>SHAREOK is the joint institutional repository for the University of Oklahoma Libraries (OU), Oklahoma State University Libraries (OSU), and the University of Central Oklahoma Max Chambers Library (UCO). It serves as the home for the intellectual output of those institutions, such as: digital theses and dissertations, faculty publications, open access publications, open educational resources, institution-specific content and much more.<p>If you would like to place your works in the institutional repository, please contact your library: OU, OSU, or UCO. Digital assets placed in the repository are available to a global audience, and search engine optimization techniques are used to increase their visibility to researchers and thus their impact on the global community.<p>If you are an OU student submitting a master\’s thesis or doctoral dissertation to the Graduate College via SHAREOK, please follow these instructions. For policies on embargoing your thesis or dissertation, please refer to the Graduate College Thesis/Dissertation Instruction Packet.<p>OSU students should follow the Thesis and Dissertation Guidelines posted in Canvas or email the Graduate College for more information.',
     parent: -1,
     children: [1, 6231, 47149],
     handleID: 0,
+    uuid: '',
+    strength: 89722
   }
+]
 
 export const COMMUNITYDATASET: ResourceData[] = [
   {
@@ -1921,7 +1924,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
 export const ITEMDATASET: ResourceData[] = [
   {
     resourcetype: ResourceType.ITEM,
-    name: "Application of Tiab's Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells",
+    name: "Application of Tiab\'s Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells",
     uuid: "f0c0e637-42f1-4812-933b-6e2c6dc02400",
     handleID: 337018,
     parent: 23528,
@@ -1934,28 +1937,14 @@ export const ITEMDATASET: ResourceData[] = [
       ["dc.date.accessioned", "2023-01-30T22:15:03Z"],
       ["dc.date.issued", 2000],
       ["dc.date.manuscript", 2000],
-      ["dc.description.abstract[en_US]", "Non-Newtonian fluids are very common during drilling, fracture operations and enhanced oil recovery processes. When a reservoir contains a non-Newtonian fluid such as those injected during polymer flood or the production of heavy oil, well test data cannot be interpreted using Newtonian fluid flow models. The resulting analysis would be erroneous because non-Newtonian fluids behave rather differently.\nThese results suggest the need for a thorough study of the behavior of non-Newtonian fluids in the reservoir and also a new look at the flow of those fluids in porous media.\nThis study presents an interpretation technique for pressure behavior of non-Newtonian fluid flow in a homogeneous reservoir without type-curve Matching. The inclusion of a no-flow and/or a constant pressure line is also investigated.\nFirst, the TSD (Tiab's Direct Synthesis) technique was applied for analyzing the pressure behavior of a well located in (1) an infinite reservoir and, (2) near a linear boundary where wellbore storage and skin effects were considered. The analysis required the generation of type-curve sets for different wellbore storage and skin values.\nA step-by-step procedure is presented for the calculation of the reservoir parameters: the permeability/viscosity ratio, wellbore storage coefficient, skin factor and the distance to the nearest boundary without the use of type-curve Matching. The procedure is illustrated by a numerical example."],
+      ["dc.description.abstract[en_US]", "Non-Newtonian fluids are very common during drilling, fracture operations and enhanced oil recovery processes. When a reservoir contains a non-Newtonian fluid such as those injected during polymer flood or the production of heavy oil, well test data cannot be interpreted using Newtonian fluid flow models. The resulting analysis would be erroneous because non-Newtonian fluids behave rather differently.\nThese results suggest the need for a thorough study of the behavior of non-Newtonian fluids in the reservoir and also a new look at the flow of those fluids in porous media.\nThis study presents an interpretation technique for pressure behavior of non-Newtonian fluid flow in a homogeneous reservoir without type-curve Matching. The inclusion of a no-flow and/or a constant pressure line is also investigated.\nFirst, the TSD (Tiab\'s Direct Synthesis) technique was applied for analyzing the pressure behavior of a well located in (1) an infinite reservoir and, (2) near a linear boundary where wellbore storage and skin effects were considered. The analysis required the generation of type-curve sets for different wellbore storage and skin values.\nA step-by-step procedure is presented for the calculation of the reservoir parameters: the permeability/viscosity ratio, wellbore storage coefficient, skin factor and the distance to the nearest boundary without the use of type-curve Matching. The procedure is illustrated by a numerical example."],
       ["dc.identifier.uri", "https://shareok.org/handle/11244/337018"],
       ["dc.language[en_US]", "en_US"],
       ["dc.subject.lcsh", "Non-Newtonian fluids||Oil field flooding||Hydrocarbon reservoirs||Oil wells"],
       ["dc.thesis.degree[en_US]", "Master of Science"],
-      ["dc.title[en_US]", "Application of Tiab's Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells"],
+      ["dc.title[en_US]", "Application of Tiab\'s Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells"],
       ["ou.birthyear[en_US]", 1968],
       ["ou.group[en_US]", "School of Petroleum and Geological Engineering"]
     ]
   }
 ]
-
-export interface UserObjectCom {
-    packing3: { pos: THREE.Vector3; occupied: boolean; }[],
-    packing2: { pos: THREE.Vector3; occupied: boolean; }[],
-    resourcetype: 4,
-    name: string,
-    parent: string[],
-    children: number[],
-    handle: string[],
-    uuid: string,
-    showstatus: boolean,
-    strength: number,
-    logo: string
-}

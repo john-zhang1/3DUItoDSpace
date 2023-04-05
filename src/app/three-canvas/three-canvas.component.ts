@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import * as TWEEN from '@tweenjs/tween.js';
 // import { GUI } from 'dat.gui';
-import { UserObject, ResourceData, SpherePacking, PackingHelper, ResourceType } from './three-models';
+import { UserObject, ResourceData, SpherePacking, PackingHelper, ResourceType, NestedResourceNode } from './three-models';
 import { SITEDATASET, COMMUNITYDATASET, COLLECTIONDATASET } from './mock-data';
-import { Mesh, PerspectiveCamera, Vector2, Vector3 } from 'three';
+import { Mesh, Vector2, Vector3 } from 'three';
 
 @Component({
   selector: 'ds-three-canvas',
@@ -51,6 +51,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public lines: THREE.Line[] = [];
   public meshMap = new Map<number, Mesh>();
   public resourcedataMap = new Map<number, ResourceData>();
+  public resourceNodes: NestedResourceNode[] = [];
 
   public targetRotationX = 0.05; // rotation vars, tweak these to tweak the speed while rotating an object
   public targetRotationY = 0.05;
@@ -75,6 +76,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public earthPane = {} as ResourceData;
   public moonsPane = {} as UserObject;
   public mousePane = {} as UserObject;
+  public showListOnMoons = false;
 
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
@@ -98,6 +100,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       this.camera.updateProjectionMatrix();
     }
     if (intersects.length > 0 ) {
+      this.showListOnMoons = true;
       this.intersectionRestore();
       // Info pane
       this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
@@ -119,6 +122,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
           await new Promise(f => setTimeout(f, 400));
           this.controls.enabled = true;
           // this.createGroupMeshes(intersects[0].object as THREE.Mesh);
+          (document.querySelector('.mouse') as HTMLElement).style.display = 'none';
       } else {
         this.controls.enabled = true;
       }
@@ -712,6 +716,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let info = moons.userData as UserObject;
     return info;
   }
+
   private getMousePaneInfo(mouse: THREE.Mesh) {
     let info = mouse.userData as UserObject;
     return info;
@@ -797,41 +802,31 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let children: number[] = [];
     queue.push(rootID);
     children.push(rootID);
-    if(rootID === 0) {
-      let site = SITEDATASET;
-      site.children.forEach((c) => {
-        queue.push(c);
-        children.push(c);
-      })
-    }
-
-    let communities = COMMUNITYDATASET;
     let currentID: number;
     while(queue.length > 0) {
       currentID = queue.shift() as number;
-      communities.forEach((community) => {
-        if(community.handleID === currentID) {
-          let cids = community.children;
-          cids.forEach((cid) => {
-            queue.push(cid);
-            children.push(cid);
-          })
-        }
-      })
+      if(this.resourcedataMap.has(currentID)) {
+        this.resourcedataMap.get(currentID)?.children.forEach((cid) => {
+          queue.push(cid);
+          children.push(cid);
+        })
+      }
     }
     return children;
   }
 
-  
   createInitGeometriesOnPlane() {
     let posArray2D = this.get2DPackingList(400, 100);
     let posArray3D = this.get3DPackingList(400, 100);
     let cData: ResourceData[] = [];
-    cData.push(SITEDATASET);
-    let tcd = this.findTopLevelCommunityData();
-    tcd.forEach((tc) => {
-      cData.push(tc);
-    })
+
+    cData.push(...SITEDATASET);
+    cData.push(...this.findTopLevelCommunityData())
+    console.log("when load data SITEDATASET 2: ");
+    console.log(JSON.stringify(SITEDATASET[0]));
+
+    console.log("when load data resourcedataMap 2: ");
+    console.log(JSON.stringify(this.resourcedataMap.get(0)));
 
     for (let i = 0; i < cData.length; i++) {
         let mesh: THREE.Mesh;
@@ -994,37 +989,13 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     })
     return mesh;
   }
-  private getMeshByResourceData(rd: ResourceData) {}
-
-  private findResourceDataByID(id: number) {
-    let communities = COMMUNITYDATASET;
-    let collections = COLLECTIONDATASET;
-    let cc = {} as ResourceData;
-    for(let i=0;i<communities.length;i++) {
-      if(communities[i].handleID === id) {
-        cc = communities[i];
-        break;
-      }
-    }
-    if(Object.keys(cc).length === 0) {
-      for(let i=0;i<collections.length;i++) {
-        if(collections[i].handleID === id) {
-          cc = collections[i];
-          break;
-        }
-      }
-    }
-    return cc;
-  }
 
   private findTopLevelCommunityData() {
     let resources: ResourceData[] = [];
     let ids = this.findTopLevelCommunityIDs();
     ids.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        resources.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      resources.push(rd);
     })
     return resources;
   }
@@ -1033,10 +1004,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let resources: ResourceData[] = [];
     let ids = this.findSecondLevelCCIDs();
     ids.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        resources.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      resources.push(rd);
     })
     return resources;
   }
@@ -1045,10 +1014,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let resources: ResourceData[] = [];
     let ids = this.findThirdLevelCCIDs();
     ids.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        resources.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      resources.push(rd);
     })
     return resources;
   }
@@ -1057,10 +1024,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let resources: ResourceData[] = [];
     let ids = this.findFourthLevelCCIDs();
     ids.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        resources.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      resources.push(rd);
     })
     return resources;
   }
@@ -1069,10 +1034,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let resources: ResourceData[] = [];
     let ids = this.findRestLevelCCIDs();
     ids.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        resources.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      resources.push(rd);
     })
     return resources;
   }
@@ -1081,17 +1044,16 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let children = rd.children;
     let dcd: ResourceData[] = [];
     children.forEach((id) => {
-      let rd = this.findResourceDataByID(id);
-      if(Object.keys(rd).length > 0) {
-        dcd.push(rd);
-      }
+      let rd = this.resourcedataMap.get(id) as ResourceData;
+      dcd.push(rd);
     })
     return dcd;
   }
 
   private findTopLevelCommunityIDs() {
     let comms: number[] = [];
-    let communities = COMMUNITYDATASET;
+    let communities: ResourceData[] = [];
+    communities.push(...COMMUNITYDATASET);
     communities.forEach((c) => {
       if(c.parent === 0) {
         comms.push(c.handleID as number);
@@ -1104,12 +1066,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let ids: number[] = [];
     let tops = this.findTopLevelCommunityIDs();
     tops.forEach((top) => {
-      let rd = this.findResourceDataByID(top);
-      if(Object.keys(rd).length > 0) {
-        rd.children.forEach((child) => {
-          ids.push(child);
-        })  
-      }
+      let rd = this.resourcedataMap.get(top) as ResourceData;
+      rd.children.forEach((child) => {
+        ids.push(child);
+      }) 
   })
     return ids;
   }
@@ -1118,12 +1078,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let ids: number[] = [];
     let seconds = this.findSecondLevelCCIDs();
     seconds.forEach((second) => {
-      let rd = this.findResourceDataByID(second);
-      if(Object.keys(rd).length > 0) {
-        rd.children.forEach((child) => {
-          ids.push(child);
-        })  
-      }
+      let rd = this.resourcedataMap.get(second) as ResourceData;
+      rd.children.forEach((child) => {
+        ids.push(child);
+      }) 
   })
     return ids;
   }
@@ -1132,12 +1090,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     let ids: number[] = [];
     let thirds = this.findThirdLevelCCIDs();
     thirds.forEach((third) => {
-      let rd = this.findResourceDataByID(third);
-      if(Object.keys(rd).length > 0) {
-        rd.children.forEach((child) => {
-          ids.push(child);
-        })  
-      }
+      let rd = this.resourcedataMap.get(third) as ResourceData;
+      rd.children.forEach((child) => {
+        ids.push(child);
+      })
   })
     return ids;
   }
@@ -1148,12 +1104,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     fourths.forEach((fourth) => {
       let cids = this.findChildrenIDBFS(fourth);
       cids.forEach((cid) => {
-        let rd = this.findResourceDataByID(cid);
-        if(Object.keys(rd).length > 0) {
-          rd.children.forEach((child) => {
-            ids.push(child);
-          })  
-        }
+        let rd = this.resourcedataMap.get(cid) as ResourceData;
+        rd.children.forEach((child) => {
+          ids.push(child);
+        })
       })
     })
     return ids;
@@ -1186,6 +1140,24 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     }
     return pos;
   }
+
+  public openDirectChildMeshesByID(id: number) {
+    if(this.meshMap.has(id)) {
+      let baseMesh = this.meshMap.get(id) as Mesh;
+      let parentObject = baseMesh.userData as UserObject;
+      let children = parentObject.resourcedata.children;
+      children.forEach((c) => {
+        let index = Math.floor(Math.random() * this.pics.length);
+        let mesh = this.createMesh(50, 100, 50, this.pics[index]);
+        mesh.position.copy(this.getPosition(this.meshMap.get(id) as Mesh) as Vector3);
+        mesh.userData = this.generateUserData(c, mesh, true);
+        this.createLines(baseMesh, mesh, 0x888888);
+        this.meshArray.push(mesh);
+        this.meshMap.set((this.resourcedataMap.get(c) as ResourceData).handleID as number, mesh);
+      })
+    }
+  }
+
 
   public async browseMeshByID(id: number) {
     if(this.meshMap.has(id)) {
@@ -1229,20 +1201,17 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       // }
     } else {
       this.createParentChain(id);
-                this.controls.enabled = true;
+      this.controls.enabled = true;
     }
   }
 
   public loadData() {
-    let siteData = SITEDATASET;
-    let communityData = COMMUNITYDATASET;
-    let collectiondata = COLLECTIONDATASET;
-    this.resourcedataMap.set(0, siteData);
-    communityData.forEach((c) => {
-      this.resourcedataMap.set(c.handleID as number, c);
-    })
-    collectiondata.forEach((c) => {
-      this.resourcedataMap.set(c.handleID as number, c);
+    let dataset: ResourceData[] = [];
+    dataset.push(...SITEDATASET);
+    dataset.push(...COMMUNITYDATASET);
+    dataset.push(...COLLECTIONDATASET);
+    dataset.forEach((d) => {
+      this.resourcedataMap.set(d.handleID as number, d);
     })
   }
 
@@ -1263,7 +1232,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
   private createParentChain(id: number) {
     let chain = this.findVacantParentChain(id).reverse();
-    console.log("chain length: " + chain.length);
     if(chain.length > 0) {
       chain.forEach((c) => {
         let index = Math.floor(Math.random() * this.pics.length);
@@ -1289,9 +1257,19 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private getPosition(base: Mesh) {
+    let packing = (base.userData as UserObject).packing3;
+    for(let i=0;i<packing.length;i++) {
+      if(!packing[i].occupied) {
+        packing[i].occupied = true;
+        return packing[i].position;
+      }
+    }
+    return new Vector3();
+  }
+
   private createChildrenChain(id: number) {
     let chain = this.findChildrenIDBFS(id);
-    console.log("Children chain length: "+chain.length);
     for(let i=0;i<chain.length;i++) {
       let resourcedata = this.resourcedataMap.get(chain[i]) as ResourceData;
       if(!this.meshMap.has(chain[i])) {
@@ -1323,6 +1301,23 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     repdata.showchildren = showstatus;
     repdata.resourcedata = this.resourcedataMap.get(id) as ResourceData;
     return repdata;
+  }
+
+  private formNestedNodesByID(id: number) {
+    let rd = this.resourcedataMap.get(id) as ResourceData;
+    let node = {} as NestedResourceNode;
+    node.id = rd.handleID as number;
+    node.name = rd.name;
+    node.strength = rd.strength as number;
+    let childIDs = rd.children;
+    let cNodes = [] as NestedResourceNode[];
+    while(childIDs.length > 0) {
+      let cid = childIDs.shift() as number;
+      let cNode = this.formNestedNodesByID(cid);
+      cNodes.push(cNode);
+    }
+    node.children = cNodes;
+    return node;
   }
 
 }

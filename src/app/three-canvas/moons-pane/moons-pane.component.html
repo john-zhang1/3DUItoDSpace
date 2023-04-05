@@ -1,15 +1,73 @@
 <div class="mb-3 row">
-    <div class="col">
-        <input id="typeahead-prevent-manual-entry" type="text" class="form-control" [(ngModel)]="model" (selectItem)="selectedItem($event)"
-            [ngbTypeahead]="search" [inputFormatter]="formatter" [resultFormatter]="formatter" [editable]="false" />
-    </div>
-</div>
-<hr />
-
-<div class="accordion-title moons-list"
-    *ngFor="let id of getPaneResourceData()?.children | slice: (currentPage-1) * pageSize : (currentPage-1) * pageSize + pageSize">
-    <div (click)="browseById(id)">{{ getObjName(id) }}</div>
+  <div class="col">
+    <input id="typeahead-prevent-manual-entry" type="text" class="form-control" #input [(ngModel)]="model" (selectItem)="onSelect($event, input)"
+        [ngbTypeahead]="search" [inputFormatter]="formatter" [resultFormatter]="formatter" [editable]="false" placeholder="Search space" />
+  </div>
 </div>
 
-<ngb-pagination [pageSize]="pageSize" [collectionSize]="getCollectionSize()" [(page)]="currentPage" [maxSize]="2"
-    size="sm" [class]="getClass()" aria-label="Default pagination"></ngb-pagination>
+<div [hidden]="!showlist">
+  <div class="moons-list"
+      *ngFor="let id of getPaneResourceData()?.children | slice: (currentPage-1) * pageSize : (currentPage-1) * pageSize + pageSize">
+      <div (click)="browseById(id)">{{ getObjName(id) }}</div>
+  </div>
+  <ngb-pagination [pageSize]="pageSize" [collectionSize]="getCollectionSize()" [(page)]="currentPage" [maxSize]="2"
+      size="sm" [class]="getClass()" aria-label="Default pagination"></ngb-pagination>
+</div>
+
+<div [hidden]="showlist">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=block" rel="stylesheet">
+  <div class="moons-title">Communities in SHAREOK</div>
+  <table>
+    <tbody>    
+      <cdk-tree [dataSource]="dataSource" [treeControl]="treeControl" class="display-contents">
+          <cdk-tree-node *cdkTreeNodeDef="let node"
+                      [style.display]="shouldRender(node) ? 'contents' : 'none'"
+                      class="display-contents">
+          <tr>
+              <td [style.padding-left.px]="node.level * 20">
+                  <span class="moons-node-text" (click)="browseById(node.id)">{{node.name}} [{{node.strength}}]</span>
+              </td>
+          </tr>
+          </cdk-tree-node>
+          <cdk-tree-node *cdkTreeNodeDef="let node; when: hasChild"
+                      [style.display]="shouldRender(node) ? 'contents' : 'none'"
+                      class="display-contents">
+          <tr>
+              <td [style.padding-left.px]="node.level * 20">
+              <button mat-icon-button cdkTreeNodeToggle
+                      (click)="node.isExpanded = !node.isExpanded"
+                      [style.visibility]="node.expandable ? 'visible' : 'hidden'">
+                  <mat-icon class="mat-icon-rtl-mirror" (click)="openById(node.id)">
+                  {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                  </mat-icon>
+              </button>
+              <span class="moons-node-text" (click)="browseById(node.id)">{{node.name}} [{{node.strength}}]</span>
+              </td>
+          </tr>
+          </cdk-tree-node>
+      </cdk-tree>
+    </tbody>
+  </table>
+</div>
+<!-- <ngb-pagination [pageSize]="pageSize" [collectionSize]="getCollectionSize()" [(page)]="currentPage" [maxSize]="2"
+        size="sm" [class]="getClass()" aria-label="Default pagination"></ngb-pagination> -->
+<!-- </div> -->
+<!-- 
+    <cdk-tree [dataSource]="nestedDataSource" [treeControl]="nestedTreeControl">
+        <cdk-nested-tree-node *cdkTreeNodeDef="let node" class="example-tree-node">
+          <button mat-icon-button disabled></button>
+          {{node.filename}}:  {{node.type}}
+        </cdk-nested-tree-node>
+        <cdk-nested-tree-node *cdkTreeNodeDef="let node; when: hasNestedChild" class="example-tree-node">
+          <button mat-icon-button [attr.aria-label]="'toggle ' + node.filename" cdkTreeNodeToggle>
+            <mat-icon class="mat-icon-rtl-mirror">
+              {{nestedTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+            </mat-icon>
+          </button>
+          {{node.filename}}:  {{node.type}}
+          <div [class.example-tree-invisible]="!nestedTreeControl.isExpanded(node)">
+            <ng-container cdkTreeNodeOutlet></ng-container>
+          </div>
+        </cdk-nested-tree-node>
+      </cdk-tree> -->
+

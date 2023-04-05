@@ -1,5 +1,12 @@
 <canvas #canvas id="canvas" class="canvas-container"></canvas>
 <ds-earth-pane id="earth" class="earth" [paneInfo]="earthPane"></ds-earth-pane>
-<ds-moons-pane id="moons" class="moons" [paneInfo]="moonsPane" [constResources]="resourcedataMap"
-    (newItemEvent)="browseMeshByID($event)" (selectedItemEvent)="browseMeshByID($event)"></ds-moons-pane>
+
+
+<!-- <div class="mat-app-background basic-container"> -->
+    <ds-moons-pane id="moons" class="moons" [paneInfo]="moonsPane" [constResources]="resourcedataMap" 
+    [showlist]="showListOnMoons" (newItemEvent)="browseMeshByID($event)" (selectedItemEvent)="browseMeshByID($event)"
+    (openItemEvent)="openDirectChildMeshesByID($event)"></ds-moons-pane>
+<!-- </div> -->
+
+
 <ds-mouse-pane id="mouse" class="mouse" [paneInfo]="mousePane"></ds-mouse-pane>

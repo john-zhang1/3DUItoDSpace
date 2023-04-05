@@ -46,15 +46,25 @@ body {
 }
 .moons-title {
     font-family: 'Rajdhani-Bold', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.0rem;
     border-bottom: 1px solid rgba(45, 45, 45, 0.8);
-    padding: 0.5rem 1rem;
     text-align: center;
+    color: white;
 }
 .moons .accordion-title {
     font-family: 'Rajdhani-Semibold', sans-serif;
     font-size: 0.8125rem;
 }
+.moons-list {
+  display: block;
+  padding: 0.5rem 1rem;
+  line-height: 1;
+  font-size: 0.8125rem;
+  color: white;
+  position: relative;
+  border-bottom: 1px solid rgba(45, 45, 45, 0.8);
+}
+
 .accordion-title {
     display: block;
     padding: 0.5rem 1rem;
@@ -141,3 +151,40 @@ input.search-query {
   .depactive {
     display: none;
   }
+
+
+
+//   
+.example-tree-invisible {
+    display: none;
+  }
+  
+  .example-tree ul,
+  .example-tree li {
+    margin-top: 0;
+    margin-bottom: 0;
+    list-style-type: none;
+  }
+  
+  .example-tree-node {
+    display: block;
+    padding-left: 40px;
+  }
+  .display-contents {
+    display: contents;
+  }
+  .mat-icon {
+    color: white;
+  }
+  span.moons-node-text {
+    font-size: 0.8125rem;
+    color: white;
+    position: relative;
+    bottom: 6px;
+  }
+  button[mat-icon-button] {
+    background-color: transparent;
+    border: none;
+    font-size: 6px;
+    height: 20px;
+}
