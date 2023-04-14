@@ -18,7 +18,28 @@ export interface ResourceData {
     strength?: number,
     logo?: string,
     files?: string[],
-    metadata?: MetadataPair[];
+    metadata?: MetadataPair[],
+    entityType?: string[],
+    isOrgUnitOfPublication?: string[],
+    isPublicationOfOrgUnit?: string[],
+    isProjectOfPerson?: string[],
+    isPersonOfProject?: string[],
+    isOrgUnitOfProject?: string[],
+    isProjectOfOrgUnit?: string[],
+    isParentOrgUnitOf?: string[],
+    isChildOrgUnitOf?: string[],
+    isOrgUnitOfPerson?: string[],
+    isPersonOfOrgUnit?: string[],
+    isAuthorOfPublication?: string[],
+    isPublicationOfAuthor?: string[],
+    isProjectOfPublication?: string[],
+    isPublicationOfProject?: string[],
+    isVolumeOfJournal?: string[],
+    isJournalOfVolume?: string[],
+    isIssueOfJournalVolume?: string[],
+    isJournalVolumeOfIssue?: string[],
+    isPublicationOfJournalIssue?: string[],
+    isJournalIssueOfPublication?: string[]
 }
 
 export interface CommunityData {

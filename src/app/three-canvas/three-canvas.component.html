@@ -4,8 +4,8 @@
 
 <!-- <div class="mat-app-background basic-container"> -->
     <ds-moons-pane id="moons" class="moons" [paneInfo]="moonsPane" [constResources]="resourcedataMap" 
-    [showlist]="showListOnMoons" (newItemEvent)="browseMeshByID($event)" (selectedItemEvent)="browseMeshByID($event)"
-    (openItemEvent)="openDirectChildMeshesByID($event)"></ds-moons-pane>
+    [showlist]="showListOnMoons" (browseItemEvent)="browseMeshByID($event)" (selectedItemEvent)="searchMeshByID($event)"
+    (openCloseItemEvent)="openCloseDirectChildMeshesByID($event)"></ds-moons-pane>
 <!-- </div> -->
 
 

@@ -455,6 +455,36 @@ export const COMMUNITYDATASET: ResourceData[] = [
     handleID: 331304,
     uuid: '4d2a5c8b-8e3a-4169-90a0-8f762e19e46d',
     strength: 1
+  },
+  {
+    resourcetype: ResourceType.COMMUNITY,
+    name: 'Entity - Publications',
+    parent: 1,
+    children: [400008],
+    logo: '',
+    handleID: 400001,
+    uuid: '0958c910-2037-42a9-81c7-dca80e3892b4',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COMMUNITY,
+    name: 'Entity - Related Objects',
+    parent: 1,
+    children: [400007, 400009, 400010],
+    logo: '',
+    handleID: 400002,
+    uuid: '692c3042-19df-4b62-91e9-99c040227999',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COMMUNITY,
+    name: 'Entity - Compound Journals',
+    parent: 1,
+    children: [400004, 400005, 400006],
+    logo: '',
+    handleID: 400003,
+    uuid: '8b632938-77c2-487c-81f0-e804f63e68e6',
+    strength: 1
   }
 ];
 
@@ -1918,7 +1948,79 @@ export const COLLECTIONDATASET: ResourceData[] = [
     handleID: 335876,
     uuid: '2cf02601-4c35-4935-80d8-a1c8a46e8409',
     strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - Journal Issues',
+    parent: 400003,
+    children: [],
+    logo: '',
+    handleID: 400004,
+    uuid: 'b7bf809e-b8ea-41bf-b16a-38d78785f557',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - Journals',
+    parent: 400003,
+    children: [],
+    logo: '',
+    handleID: 400005,
+    uuid: '8b632938-77c2-487c-81f0-e804f63e68e6',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - Journal Volumes',
+    parent: 400003,
+    children: [],
+    logo: '',
+    handleID: 400006,
+    uuid: '8814a173-73ce-4ca3-92c2-17c9d0f2268c',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - OrgUnits',
+    parent: 400002,
+    children: [],
+    logo: '',
+    handleID: 400007,
+    uuid: 'd8ab207f-6eda-4c42-b2e5-ef76c2586070',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - Publications',
+    parent: 400001,
+    children: [],
+    logo: '',
+    handleID: 400008,
+    uuid: 'dd1240ae-d7dd-405c-bdc3-d6c960609433',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - Projects',
+    parent: 400002,
+    children: [],
+    logo: '',
+    handleID: 400009,
+    uuid: 'eb3224f3-6383-42e1-abe0-a73df842608a',
+    strength: 1
+  },
+  {
+    resourcetype: ResourceType.COLLECTION,
+    name: 'Entity - People',
+    parent: 400002,
+    children: [],
+    logo: '',
+    handleID: 400010,
+    uuid: 'ece42bb4-5ec0-4760-b727-30f9f593acb8',
+    strength: 1
   }
+
+
 ]
 
 export const ITEMDATASET: ResourceData[] = [
@@ -1942,9 +2044,7 @@ export const ITEMDATASET: ResourceData[] = [
       ["dc.language[en_US]", "en_US"],
       ["dc.subject.lcsh", "Non-Newtonian fluids||Oil field flooding||Hydrocarbon reservoirs||Oil wells"],
       ["dc.thesis.degree[en_US]", "Master of Science"],
-      ["dc.title[en_US]", "Application of Tiab\'s Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells"],
-      ["ou.birthyear[en_US]", 1968],
-      ["ou.group[en_US]", "School of Petroleum and Geological Engineering"]
+      ["dc.title[en_US]", "Application of Tiab\'s Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells"]
     ]
   }
 ]

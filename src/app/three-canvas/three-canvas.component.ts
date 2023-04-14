@@ -48,8 +48,9 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public indexCurrent = 0;
 
   public meshArray: THREE.Mesh[] = [];
-  public lines: THREE.Line[] = [];
   public meshMap = new Map<number, Mesh>();
+  public lines: THREE.Line[] = [];
+  public lineMap = new Map<string, THREE.Line>();
   public resourcedataMap = new Map<number, ResourceData>();
   public resourceNodes: NestedResourceNode[] = [];
 
@@ -78,11 +79,18 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public mousePane = {} as UserObject;
   public showListOnMoons = false;
 
+  public matMenuTimer: any;
+
   @ViewChild('canvas')
   public canvasRef!: ElementRef;
 
   @HostListener('window:click', ['$event'])
-  async onDocumentMouseDown(event: MouseEvent) {
+  onDocumentMouseDown(event: MouseEvent) {
+    this.matMenuTimer = setTimeout( () => {this.singleClickOnMesh(event);}, 150);
+  }
+
+  public async singleClickOnMesh(event: MouseEvent) {
+    if (!this.matMenuTimer) return;
     event.preventDefault();
     TWEEN.removeAll();
     // const vector = new THREE.Vector3((event.clientX / this.canvas.clientWidth) * 2 - 1, - (event.clientY / this.canvas.clientHeight) * 2 + 1, 0.5);
@@ -136,6 +144,9 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
   @HostListener('window:dblclick', ['$event'])
   onDocumentMouseDownDBLClick(event: MouseEvent) {
+    clearTimeout(this.matMenuTimer);
+    this.matMenuTimer = undefined;
+
     event.preventDefault();
     this.intersectionRestore();
     const raycaster = new THREE.Raycaster();
@@ -143,12 +154,19 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     raycaster.setFromCamera( mouse, this.camera );
     const intersects = raycaster.intersectObjects( this.meshArray, false );
     if (intersects.length > 0 ) {
-      let cx = intersects[0].object.position.x;
-      let cy = intersects[0].object.position.y;
-      let cz = intersects[0].object.position.z;  
-      if(!(cx==0 && cy==0 && cz==0)) {
-        this.createGroupMeshes(intersects[0].object as THREE.Mesh);
+      this.controls.enabled = false;
+      TWEEN.removeAll();
+      if((intersects[0].object.userData as UserObject).showchildren) {
+        this.deleteChildrenChain((intersects[0].object.userData as UserObject).resourcedata.handleID as number);
+      } else {
+        this.createChildrenChain((intersects[0].object.userData as UserObject).resourcedata.handleID as number);
+        (intersects[0].object.userData as UserObject).showchildren = true;  
       }
+      this.controls.enabled = true;
+    } else {
+      this.controls.enabled = true;
+      this.targetRotationX = 0;
+      this.targetRotationX = 0;
     }
   }
 
@@ -589,7 +607,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     this.scene.add( line );
     this.lines.push(line);
   }
-  public createLines(mesh1: THREE.Mesh, mesh2: THREE.Mesh, linecolor?: number) {
+  public createLines(parentmesh1: THREE.Mesh, mesh2: THREE.Mesh, linecolor?: number) {
     const parameters = [[ 0.25, 0xff7700, 1 ], [ 0.5, 0xff9900, 1 ], [ 0.75, 0xffaa00, 0.75 ], [ 1, 0xffaa00, 0.5 ], [ 1.25, 0x000833, 0.8 ],
   [ 3.0, 0xaaaaaa, 0.75 ], [ 3.5, 0xffffff, 0.5 ], [ 4.5, 0xffffff, 0.25 ], [ 5.5, 0xffffff, 0.125 ]];
 
@@ -597,13 +615,16 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     // const material = new THREE.LineBasicMaterial( { color: 0xffaa00, linewidth: 0.5, opacity: 0.125, vertexColors: true });
     const material = new THREE.LineBasicMaterial( { color: 0xffaa00, linewidth: 0.5, opacity: 0.125 });
     const points = [];
-    points.push( mesh1.position );
+    points.push( parentmesh1.position );
     points.push( mesh2.position );    
     const geometry = new THREE.BufferGeometry().setFromPoints( points );
     const line = new THREE.Line( geometry, material );
     this.scene.add( line );
     this.lines.push(line);
+    const lineid = (parentmesh1.userData as UserObject).resourcedata.handleID + '-' + (mesh2.userData as UserObject).resourcedata.handleID;
+    this.lineMap.set(lineid, line);
   }
+
   public createItemMeshes(object: THREE.Scene | THREE.Mesh) {
     if(typeof object === 'undefined') {
       object = this.scene;
@@ -822,11 +843,6 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
     cData.push(...SITEDATASET);
     cData.push(...this.findTopLevelCommunityData())
-    console.log("when load data SITEDATASET 2: ");
-    console.log(JSON.stringify(SITEDATASET[0]));
-
-    console.log("when load data resourcedataMap 2: ");
-    console.log(JSON.stringify(this.resourcedataMap.get(0)));
 
     for (let i = 0; i < cData.length; i++) {
         let mesh: THREE.Mesh;
@@ -1141,68 +1157,116 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return pos;
   }
 
-  public openDirectChildMeshesByID(id: number) {
+  public openCloseDirectChildMeshesByID(id: number) {
     if(this.meshMap.has(id)) {
-      let baseMesh = this.meshMap.get(id) as Mesh;
-      let parentObject = baseMesh.userData as UserObject;
-      let children = parentObject.resourcedata.children;
-      children.forEach((c) => {
-        let index = Math.floor(Math.random() * this.pics.length);
-        let mesh = this.createMesh(50, 100, 50, this.pics[index]);
-        mesh.position.copy(this.getPosition(this.meshMap.get(id) as Mesh) as Vector3);
-        mesh.userData = this.generateUserData(c, mesh, true);
-        this.createLines(baseMesh, mesh, 0x888888);
-        this.meshArray.push(mesh);
-        this.meshMap.set((this.resourcedataMap.get(c) as ResourceData).handleID as number, mesh);
-      })
+      if((this.meshMap.get(id)?.userData as UserObject).showchildren){
+        let baseMesh = this.meshMap.get(id) as Mesh;
+        let parentObject = baseMesh.userData as UserObject;
+        parentObject.showchildren = false;
+        let children = parentObject.resourcedata.children;
+        children.forEach((c) => {
+          this.deleteMesh(c);
+        })
+        // Update parent packing
+        parentObject.packing3.forEach((p) => {
+          p.occupied = false;
+        })
+      } else {
+        let baseMesh = this.meshMap.get(id) as Mesh;
+        let parentObject = baseMesh.userData as UserObject;
+        parentObject.showchildren = true;
+        let children = parentObject.resourcedata.children;
+        children.forEach((c) => {
+          let index = Math.floor(Math.random() * this.pics.length);
+          let mesh = this.createMesh(50, 100, 50, this.pics[index]);
+          mesh.position.copy(this.getPosition(this.meshMap.get(id) as Mesh) as Vector3);
+          mesh.userData = this.generateUserData(c, mesh, false);
+          this.createLines(baseMesh, mesh, 0x888888);
+          this.meshArray.push(mesh);
+          this.meshMap.set((this.resourcedataMap.get(c) as ResourceData).handleID as number, mesh);
+        })
+      }
     }
   }
 
+  public deleteMesh(id: number) {
+    let mesh = {} as Mesh;
+    let parentMesh = {} as Mesh;
+    console.log("deleteMesh: "+id);
+    if(this.meshMap.has(id)) {
+      console.log("meshMap has: "+id);
+      mesh = this.meshMap.get(id) as Mesh;
+      parentMesh = this.meshMap.get((mesh.userData as UserObject).resourcedata.parent) as Mesh;
+    }
+    console.log("Works 1");
+    this.deleteLineToParent(parentMesh, mesh);
+    console.log("Works 2");
+    this.scene.remove(mesh);
+    console.log("Works 3");
+    this.meshMap.delete(id);
+    console.log("Works 4");
+    // Remove from meshArray
+    let ind = this.meshArray.indexOf(mesh, 0);
+    console.log("Works 5");
+    this.meshArray.splice(ind, 1);
+    console.log("Works 6");
+  }
+
+  public deleteLineToParent(parentMesh: Mesh, mesh: Mesh) {
+    console.log("parentMesh" + JSON.stringify(parentMesh.userData));
+    const lineid = (parentMesh.userData as UserObject).resourcedata.handleID + '-' + (mesh.userData as UserObject).resourcedata.handleID;
+    console.log("lineid "+lineid);
+    let line = this.lineMap.get(lineid) as THREE.Line;
+    this.lineMap.delete(lineid);
+    this.scene.remove(line);
+  }
+
+  public async searchMeshByID(id: number) {
+    this.browseMeshByID(id);
+  }
 
   public async browseMeshByID(id: number) {
-    if(this.meshMap.has(id)) {
-      this.createChildrenChain(id);
-
-      // let mesh = this.meshMap.get(id) as Mesh;
-      // await new Promise(f => setTimeout(f, 400));
-      // const look = new THREE.Vector3();
-      // const moveCam = (camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) => {
-      //   this.camera.position.x = camiX;
-      //   this.camera.position.y = camiY;
-      //   this.camera.position.z = camiZ;
-      //   this.camera.lookAt(look);
-      //   this.camera.updateProjectionMatrix();
-      // }
-      // if ( Object.keys((mesh.userData as UserObject).resourcedata).length > 0 ) {
-      //   let cx = mesh.position.x;
-      //   let cy = mesh.position.y;
-      //   let cz = mesh.position.z;  
-      //   if(!(cx==0 && cy==0 && cz==0)) {
-      //     this.controls.enabled = false;
-      //     TWEEN.removeAll();
-      //     this.touchTween = new TWEEN.Tween( {x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z} )
-      //       .to( {x: mesh.position.x, y: mesh.position.y, z: mesh.position.z }, 400 )
-      //       .easing(TWEEN.Easing.Cubic.InOut)
-      //       .onUpdate(function(o) {
-      //         moveCam(o.x, o.y, o.z, look)
-      //       })
-      //       .start()
-      //       await new Promise(f => setTimeout(f, 400));
-      //       this.controls.enabled = true;
-      //       this.earthPane = this.getEarthPaneInfo(mesh);
-      //       this.moonsPane = this.getMoonsPaneInfo(mesh);    
-      //   } else {
-      //     this.controls.enabled = true;
-      //   }
-      // } else {
-      //   this.controls.enabled = true;
-      //   this.targetRotationX = 0;
-      //   this.targetRotationX = 0;
-      // }
-    } else {
+    if(!this.meshMap.has(id)) {
+      // this.createChildrenChain(id);
       this.createParentChain(id);
-      this.controls.enabled = true;
     }
+
+    let mesh = this.meshMap.get(id) as Mesh;
+    await new Promise(f => setTimeout(f, 400));
+    const look = new THREE.Vector3();
+    const moveCam = (camiX: number, camiY: number, camiZ: number, look: THREE.Vector3) => {
+      this.camera.position.x = camiX;
+      this.camera.position.y = camiY;
+      this.camera.position.z = camiZ;
+      this.camera.lookAt(look);
+      this.camera.updateProjectionMatrix();
+    }
+
+    let cx = mesh.position.x;
+    let cy = mesh.position.y;
+    let cz = mesh.position.z;
+    if(!(cx==0 && cy==0 && cz==0)) {
+      this.controls.enabled = false;
+      TWEEN.removeAll();
+      this.touchTween = new TWEEN.Tween( {x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z} )
+        .to( {x: mesh.position.x, y: mesh.position.y, z: mesh.position.z }, 400 )
+        .easing(TWEEN.Easing.Cubic.InOut)
+        .onUpdate(function(o) {
+          moveCam(o.x, o.y, o.z, look)
+        })
+        .start()
+        await new Promise(f => setTimeout(f, 400));
+        this.controls.enabled = true;
+        this.earthPane = this.getEarthPaneInfo(mesh);
+        this.moonsPane = this.getMoonsPaneInfo(mesh);
+
+      } else {
+        this.controls.enabled = true;
+        this.targetRotationX = 0;
+        this.targetRotationX = 0;
+      }
+      // this.createParentChain(id);
+      // this.controls.enabled = true;
   }
 
   public loadData() {
@@ -1233,10 +1297,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   private createParentChain(id: number) {
     let chain = this.findVacantParentChain(id).reverse();
     if(chain.length > 0) {
-      chain.forEach((c) => {
+      chain.forEach((cid) => {
         let index = Math.floor(Math.random() * this.pics.length);
         let mesh = this.createMesh(50, 100, 50, this.pics[index]);
-        let parentID = (this.resourcedataMap.get(id) as ResourceData).parent as number;
+        let parentID = (this.resourcedataMap.get(cid) as ResourceData).parent as number;
         let parentMesh = this.meshMap.get(parentID) as Mesh;
         let packing = (parentMesh.userData as UserObject).packing3;
         let occupiedFlag = false;
@@ -1245,10 +1309,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
             if(!packing[i].occupied) {
               mesh.position.copy(packing[i].position);
               packing[i].occupied = true;
-              mesh.userData = this.generateUserData(c, mesh, true);
+              mesh.userData = this.generateUserData(cid, mesh, true);
               this.createLines(this.meshMap.get(parentID) as Mesh, mesh, 0x888888);
               this.meshArray.push(mesh);
-              this.meshMap.set((this.resourcedataMap.get(c) as ResourceData).handleID as number, mesh);
+              this.meshMap.set((this.resourcedataMap.get(cid) as ResourceData).handleID as number, mesh);
               occupiedFlag = true;
             }
           }
@@ -1275,7 +1339,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       if(!this.meshMap.has(chain[i])) {
         let parent = this.meshMap.get(resourcedata.parent) as Mesh;
         let packing = (parent?.userData as UserObject).packing3;
-        let mesh = this.createMesh(50, 100, 50);
+        let mesh = this.createMesh(50, 100, 50, this.planetPics[i%5]);
         let occupiedFlag = false;
         for(let j=0;j<packing.length;j++) {
           if(!occupiedFlag) {
@@ -1292,6 +1356,24 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         }
       }
     }
+  }
+
+  private deleteChildrenChain(id: number) {
+    console.log("begin to delete");
+    let chain = this.findChildrenIDBFS(id).reverse();
+    console.log("Chain: "+chain);
+    let rootID = chain.pop() as number; // Keep the clicked mesh
+    console.log("rootID: "+rootID);
+    let parentObject = this.meshMap.get(rootID)?.userData as UserObject;
+    console.log("parentObject: "+JSON.stringify(parentObject));
+    chain.forEach((c) => {
+      console.log("delete " + c);
+      this.deleteMesh(c);
+    })
+    parentObject.showchildren = false;
+    parentObject.packing3.forEach((p) => {
+      p.occupied = false;
+    })
   }
 
   private generateUserData(id: number, base: Mesh, showstatus: boolean) {

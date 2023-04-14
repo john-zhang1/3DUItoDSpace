@@ -37,7 +37,7 @@
               <button mat-icon-button cdkTreeNodeToggle
                       (click)="node.isExpanded = !node.isExpanded"
                       [style.visibility]="node.expandable ? 'visible' : 'hidden'">
-                  <mat-icon class="mat-icon-rtl-mirror" (click)="openById(node.id)">
+                  <mat-icon class="mat-icon-rtl-mirror" (click)="openCloseById(node.id)">
                   {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                   </mat-icon>
               </button>

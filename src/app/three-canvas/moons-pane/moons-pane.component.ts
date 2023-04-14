@@ -16,9 +16,9 @@ export class MoonsPaneComponent implements OnInit, AfterViewInit {
 
   @Input() paneInfo = {} as UserObject;
 
-  @Output() newItemEvent = new EventEmitter<number>();
+  @Output() browseItemEvent = new EventEmitter<number>();
   @Output() selectedItemEvent = new EventEmitter<number>();
-  @Output() openItemEvent = new EventEmitter<number>();
+  @Output() openCloseItemEvent = new EventEmitter<number>();
 
   @Input() constResources = new Map<number, ResourceData>();
   @Input() showlist = false;
@@ -81,10 +81,12 @@ export class MoonsPaneComponent implements OnInit, AfterViewInit {
         names.push(name);
       }
     })
+    console.log("names: "+names);
     return names;
   }
 
   public getObjName(id: number) {
+    this.showlist = true;
     let name: string = '';
     let communities = COMMUNITYDATASET;
     let collections = COLLECTIONDATASET;
@@ -139,11 +141,11 @@ export class MoonsPaneComponent implements OnInit, AfterViewInit {
   }
 
   public browseById(id: number) {
-    this.newItemEvent.emit(id);
+    this.browseItemEvent.emit(id);
   }
 
-  public openById(id: number) {
-    this.openItemEvent.emit(id);
+  public openCloseById(id: number) {
+    this.openCloseItemEvent.emit(id);
   }
 
   public onSelect(item: any, input: HTMLInputElement) {
