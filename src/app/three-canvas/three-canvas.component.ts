@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import * as TWEEN from '@tweenjs/tween.js';
 // import { GUI } from 'dat.gui';
-import { UserObject, ResourceData, SpherePacking, PackingHelper, ResourceType, NestedResourceNode } from './three-models';
+import { UserObject, ResourceData, ItemResourceData , SpherePacking, PackingHelper, ResourceType, NestedResourceNode } from './three-models';
 import { SITEDATASET, COMMUNITYDATASET, COLLECTIONDATASET } from './mock-data';
+import { ITEMDATASET, ITEMDATASET2 } from './mock-item-data';
 import { Mesh, Vector2, Vector3 } from 'three';
 
 @Component({
@@ -16,6 +17,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.loadData();
+    this.earthPane = SITEDATASET[0];
   }
 
   public renderer!: THREE.WebGLRenderer;
@@ -52,6 +54,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public lines: THREE.Line[] = [];
   public lineMap = new Map<string, THREE.Line>();
   public resourcedataMap = new Map<number, ResourceData>();
+  public itemResourcedataMap = new Map<string, ItemResourceData>();
   public resourceNodes: NestedResourceNode[] = [];
 
   public targetRotationX = 0.05; // rotation vars, tweak these to tweak the speed while rotating an object
@@ -112,7 +115,16 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
       this.intersectionRestore();
       // Info pane
       this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
-      this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);
+      this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh); 
+      if((intersects[0].object.userData as UserObject).resourcedata.resourcetype === ResourceType.COMMUNITY) {
+        // this.earthPane = this.getEarthPaneInfo(intersects[0].object as THREE.Mesh);
+        // this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);  
+      }
+      else if((intersects[0].object.userData as UserObject).resourcedata.resourcetype === ResourceType.COLLECTION) {
+        let uid = (intersects[0].object.userData as UserObject).resourcedata.uuid as string;
+        let itemdataset = this.findItemsByCollectionUuid(uid);
+
+      }
 
       let cx = intersects[0].object.position.x;
       let cy = intersects[0].object.position.y;
@@ -1192,30 +1204,20 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public deleteMesh(id: number) {
     let mesh = {} as Mesh;
     let parentMesh = {} as Mesh;
-    console.log("deleteMesh: "+id);
     if(this.meshMap.has(id)) {
-      console.log("meshMap has: "+id);
       mesh = this.meshMap.get(id) as Mesh;
       parentMesh = this.meshMap.get((mesh.userData as UserObject).resourcedata.parent) as Mesh;
     }
-    console.log("Works 1");
     this.deleteLineToParent(parentMesh, mesh);
-    console.log("Works 2");
     this.scene.remove(mesh);
-    console.log("Works 3");
     this.meshMap.delete(id);
-    console.log("Works 4");
     // Remove from meshArray
     let ind = this.meshArray.indexOf(mesh, 0);
-    console.log("Works 5");
     this.meshArray.splice(ind, 1);
-    console.log("Works 6");
   }
 
   public deleteLineToParent(parentMesh: Mesh, mesh: Mesh) {
-    console.log("parentMesh" + JSON.stringify(parentMesh.userData));
     const lineid = (parentMesh.userData as UserObject).resourcedata.handleID + '-' + (mesh.userData as UserObject).resourcedata.handleID;
-    console.log("lineid "+lineid);
     let line = this.lineMap.get(lineid) as THREE.Line;
     this.lineMap.delete(lineid);
     this.scene.remove(line);
@@ -1276,6 +1278,13 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     dataset.push(...COLLECTIONDATASET);
     dataset.forEach((d) => {
       this.resourcedataMap.set(d.handleID as number, d);
+    })
+
+    let itemdataset: ItemResourceData[] = [];
+    itemdataset.push(...ITEMDATASET);
+    itemdataset.push(...ITEMDATASET2);
+    itemdataset.forEach((i) => {
+      this.itemResourcedataMap.set(i.uuid as string, i);
     })
   }
 
@@ -1359,15 +1368,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   }
 
   private deleteChildrenChain(id: number) {
-    console.log("begin to delete");
     let chain = this.findChildrenIDBFS(id).reverse();
-    console.log("Chain: "+chain);
     let rootID = chain.pop() as number; // Keep the clicked mesh
-    console.log("rootID: "+rootID);
     let parentObject = this.meshMap.get(rootID)?.userData as UserObject;
-    console.log("parentObject: "+JSON.stringify(parentObject));
     chain.forEach((c) => {
-      console.log("delete " + c);
       this.deleteMesh(c);
     })
     parentObject.showchildren = false;
@@ -1402,6 +1406,21 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return node;
   }
 
+  public HandleToUUID(id: number) {
+    return (this.resourcedataMap.get(id) as ResourceData).uuid; 
+  }
+
+  public findItemsByCollectionUuid(uuid: string) {
+    let itemMap = new Map<string, ItemResourceData>();
+    let itemData = this.itemResourcedataMap;
+    itemData.forEach((i) => {
+      if(i.parentUUID[0]===uuid) {
+        itemMap.set(i.uuid, i);
+      }
+    })
+    console.log("itemMap size: "+itemMap.size);
+    return itemMap;
+  }
 }
 
 // Click on an item button: 

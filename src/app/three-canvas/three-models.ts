@@ -19,6 +19,19 @@ export interface ResourceData {
     logo?: string,
     files?: string[],
     metadata?: MetadataPair[],
+}
+
+export interface ItemResourceData {
+    resourcetype: ResourceType,
+    name?: string[],
+    author?: string[],
+    abstract?: string[],
+    parentUUID: string[],
+    handleID?: number,
+    uuid: string,
+    dateIssued?: string[],
+    files?: string[],
+    metadata?: MetadataPair[],
     entityType?: string[],
     isOrgUnitOfPublication?: string[],
     isPublicationOfOrgUnit?: string[],

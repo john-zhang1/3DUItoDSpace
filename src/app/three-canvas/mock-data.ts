@@ -1957,7 +1957,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400004,
     uuid: 'b7bf809e-b8ea-41bf-b16a-38d78785f557',
-    strength: 1
+    strength: 20
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -1966,8 +1966,8 @@ export const COLLECTIONDATASET: ResourceData[] = [
     children: [],
     logo: '',
     handleID: 400005,
-    uuid: '8b632938-77c2-487c-81f0-e804f63e68e6',
-    strength: 1
+    uuid: '8ad84c46-bdf1-4558-9b90-5c43ff396980',
+    strength: 2
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -1977,7 +1977,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400006,
     uuid: '8814a173-73ce-4ca3-92c2-17c9d0f2268c',
-    strength: 1
+    strength: 4
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -1987,7 +1987,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400007,
     uuid: 'd8ab207f-6eda-4c42-b2e5-ef76c2586070',
-    strength: 1
+    strength: 30
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -1997,7 +1997,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400008,
     uuid: 'dd1240ae-d7dd-405c-bdc3-d6c960609433',
-    strength: 1
+    strength: 44
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -2007,7 +2007,7 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400009,
     uuid: 'eb3224f3-6383-42e1-abe0-a73df842608a',
-    strength: 1
+    strength: 20
   },
   {
     resourcetype: ResourceType.COLLECTION,
@@ -2017,13 +2017,11 @@ export const COLLECTIONDATASET: ResourceData[] = [
     logo: '',
     handleID: 400010,
     uuid: 'ece42bb4-5ec0-4760-b727-30f9f593acb8',
-    strength: 1
+    strength: 61
   }
-
-
 ]
 
-export const ITEMDATASET: ResourceData[] = [
+export const ITEMDATASETSAMPLE: ResourceData[] = [
   {
     resourcetype: ResourceType.ITEM,
     name: "Application of Tiab\'s Direct Synthesis technique to transient pressure response of non-Newtonian fluids in vertical wells",
