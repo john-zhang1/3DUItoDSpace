@@ -1,1 +1,14 @@
-<div class="mouse-title">{{ getPaneInfoName() }}</div>
+<div class="mouse-title" *ngIf="getPaneResourceData()?.resourcetype===2">
+    Item: {{ getPaneResourceData()?.itemresource?.name }}
+</div>
+<div class="mouse-title" *ngIf="getPaneResourceData()?.resourcetype===3 || getPaneResourceData()?.resourcetype===4 || getPaneResourceData()?.resourcetype===5">
+    <div *ngIf="getPaneResourceData()?.resourcetype===3">
+        Collection: {{ getPaneResourceData()?.name }}
+    </div>
+    <div *ngIf="getPaneResourceData()?.resourcetype===4">
+        Community: {{ getPaneResourceData()?.name }}
+    </div>
+    <div *ngIf="getPaneResourceData()?.resourcetype===5">
+        {{ getPaneResourceData()?.name }}
+    </div>
+</div>

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, AfterViewInit } from '@angular/core';
 import { ResourceType, UserObject } from '../three-models';
 
 @Component({
@@ -6,10 +6,13 @@ import { ResourceType, UserObject } from '../three-models';
   templateUrl: './mouse-pane.component.html',
   styleUrls: ['./mouse-pane.component.scss']
 })
-export class MousePaneComponent {
+export class MousePaneComponent implements OnInit, AfterViewInit {
   @Input() paneInfo = {} as UserObject;
 
-  public getPaneInfoName() {
+  ngOnInit() {}
+  ngAfterViewInit() {}
+
+  public getPaneInfoName1() {
     let name: string = '';
     let rtype: ResourceType;
     let strength: number = 0;
@@ -25,6 +28,15 @@ export class MousePaneComponent {
       }
     }
     return name;    
+  }
+
+  public getPaneResourceData() {
+    let rd = this.paneInfo.resourcedata;
+    if(typeof rd !== 'undefined') {
+      return rd;
+    } else {
+      return null;
+    }
   }
 
 }

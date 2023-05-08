@@ -134,7 +134,7 @@ export class MoonsPaneComponent implements OnInit, AfterViewInit {
     this.constResources.forEach((mapItem) => {
       let pair = {} as MoonPair;
       pair.id = mapItem.handleID as number;
-      pair.name = mapItem.name;
+      pair.name = mapItem.name as string;
       pairs.push(pair);
     })
     return pairs;

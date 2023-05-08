@@ -1,28 +1,54 @@
-<!-- <div class="earth-title">{{ getEarthName() }}</div>
-<div class="description" [innerHTML]="getDescription()"></div>
- -->
  <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-tabs">
 	<li [ngbNavItem]="1">
-		<a ngbNavLink>One</a>
-		<ng-template ngbNavContent class="earth-title">
-			<div class="earth-title">{{ getEarthName() }}</div>
-            <div class="description" [innerHTML]="getDescription()"></div>
+		<a ngbNavLink>Title</a>
+		<ng-template ngbNavContent>
+			<div *ngIf="paneInfo.resourcetype===2">
+				<div class="earth-title">Item: {{ paneInfo.itemresource?.name }}</div>
+				<div class="description" [innerHTML]="paneInfo.itemresource?.abstract"></div>
+			</div>
+			<div *ngIf="paneInfo.resourcetype===3 || paneInfo.resourcetype===4 || paneInfo.resourcetype===5">
+				<div *ngIf="paneInfo.resourcetype===3">
+					<div class="earth-title">Collection: {{ paneInfo.name }}</div>
+				</div>
+				<div *ngIf="paneInfo.resourcetype===4">
+					<div class="earth-title">Community: {{ paneInfo.name }}</div>
+				</div>
+				<div *ngIf="paneInfo.resourcetype===5">
+					<div class="earth-title">{{ paneInfo.name }}</div>
+				</div>
+				<div class="description" [innerHTML]="paneInfo.description"></div>
+			</div>
 		</ng-template>
 	</li>
 	<li [ngbNavItem]="2">
-		<a ngbNavLink>Two</a>
+		<a ngbNavLink>Info</a>
 		<ng-template ngbNavContent>
-			<p>
-				When the expression evaluates to true, Angular renders the template. 
-			</p>
+			<div class="earth-title" *ngIf="paneInfo.resourcetype===3">
+				<p><span class="dont-break-out">Test submission 3.0</span></p>
+				<p><img _ngcontent-dspace-angular-c133="" class="thumbnail-content img-fluid ng-star-inserted" src="https://ds7dev.shareok.org/server/api/core/bitstreams/110d2823-7f06-4a26-a785-a9b74227a66d/content" alt="Thumbnail Image"></p>
+				<p>Files</p><p><a href="https://ds7dev.shareok.org/bitstreams/51b83980-b008-44b7-91f1-5aa08c1bcc69/download">How to ensure all files are anonymized.pdf(65.42 KB)</a></p>
+				<p>Date</p><p>2023-04-04</p>
+				<p>Authors</p><p>Vichare, Pranav</p>
+				<p>Abstract</p><p>This is a test submission.</p>
+				<p>Keywords</p><p>Mathematics., Physics, General., Education, Mathematics.</p>
+				<p>URI</p><p><a _ngcontent-dspace-angular-c329="" class="dont-break-out ng-star-inserted" href="https://ds7dev.shareok.org//handle/11244/337121"> https://ds7dev.shareok.org//handle/11244/337121<!----></a></p>
+				<p>Collections</p><p><a href="/collections/c277530b-5e3d-43fe-97f3-9a53ec1062ae" class="ng-star-inserted"><span>OU - Theses</span><!----></a></p>
+			</div>
+			<div class="earth-title" *ngIf="paneInfo.resourcetype===4">
+				{{ paneInfo.resourcetype }}
+			</div>
+			<div class="earth-title" *ngIf="paneInfo.resourcetype===5">
+				{{ paneInfo.resourcetype }}
+			</div>
 		</ng-template>
 	</li>
 	<li [ngbNavItem]="3">
-		<a ngbNavLink>Three</a>
+		<a ngbNavLink>Stats</a>
 		<ng-template ngbNavContent>
-			<p>
-				Sed commodo, leo at suscipit dictum, quam est porttitor sapien, eget sodales nibh elit id diam. 
-			</p>
+			<svg id="id_view" height="250" width="250"/>
+			<svg id="id_download" height="250" width="250"/>
+			{{ createViewBar() }}
+			{{ createDownloadBar() }}
 		</ng-template>
 	</li>
 </ul>
