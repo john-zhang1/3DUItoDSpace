@@ -42,3 +42,5 @@ testem.log
 Thumbs.db
 
 /src/assets/avatar
+/src/app/three-canvas/mock-data.ts
+/src/app/three-canvas/mock-item-data.ts
