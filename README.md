@@ -1,6 +1,6 @@
-An experimental 3D UI to allow users to capture and describe digital material in DSpace, to add fun and excitement to explore the repositories.
-
 # Angular Three
+
+An experimental 3D UI to allow users to capture and describe digital material in DSpace, to add fun and excitement to explore the repositories.
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.0.4.
 
