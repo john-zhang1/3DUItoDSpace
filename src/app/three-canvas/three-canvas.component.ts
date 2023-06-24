@@ -75,6 +75,8 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
   public planetPics = ['assets/textures/earth_atmos_2048.jpg', 'assets/textures/earthbump1k.jpg', 'assets/textures/earthmap1k.jpg', 'assets/textures/jupiter2_1k.jpg', 'assets/textures/land_ocean_ice_cloud_2048.jpg', 'assets/textures/mars_1k_color.jpg', 'assets/textures/mercurymap.jpg', 'assets/textures/saturnmap.jpg', 'assets/textures/neptunemap.jpg'];
   public look = new THREE.Vector3(0, 0, 0);
   public pics = ['assets/textures/new/earth_color.jpg', 'assets/textures/new/jupiter_color.jpg', 'assets/textures/new/mars_color.jpg', 'assets/textures/new/neptune_color.jpg', 'assets/textures/new/pluto_color.jpg', 'assets/textures/new/saturn_color.jpg', 'assets/textures/new/venus_color.jpg'];
+  public avatars = ['assets/avatar/images-1.png', 'assets/avatar/images-2.png', 'assets/avatar/images-3.png', 'assets/avatar/images-4.png', 'assets/avatar/images-5.png', 'assets/avatar/images-6.png', 'assets/avatar/images-7.png', 'assets/avatar/images-8.png', 'assets/avatar/images-9.png', 'assets/avatar/images-10.png', 'assets/avatar/images-11.png', 'assets/avatar/images-12.png', 'assets/avatar/images-13.png', 'assets/avatar/images-14.png', 'assets/avatar/images-15.png', 
+  'assets/avatar/images-16.png', 'assets/avatar/images-17.png', 'assets/avatar/images-18.png', 'assets/avatar/images-19.png', 'assets/avatar/images-20.png', 'assets/avatar/images-21.png', 'assets/avatar/images-22.png', 'assets/avatar/images-23.png', 'assets/avatar/images-24.png', 'assets/avatar/images-25.png', 'assets/avatar/images-26.png', 'assets/avatar/images-27.png', 'assets/avatar/images-28.png', 'assets/avatar/images-29.png', 'assets/avatar/images-30.png'];
 
   // public gui = new GUI();
   // public cubeFolder!: GUI;
@@ -134,6 +136,7 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
         this.moonsPane = this.getMoonsPaneInfo(intersects[0].object as THREE.Mesh);
         if(rd.strength as number > 0 && (intersects[0].object.userData as UserObject).showchildren===false) {
           this.createItemMeshesByCollectionUUID(rd.uuid);
+          // this.createEntityMeshesByCollectionUUID(rd.uuid);
         } else {
           this.removeItemChildren();
         }
@@ -252,10 +255,10 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
     theta += 0.2;
 
-    // this.camera.position.x = this.radius * Math.sin( theta * Math.PI / 360 );
-    // this.camera.position.y = this.radius * Math.sin( theta * Math.PI / 360 );
-    // this.camera.position.z = this.radius * Math.cos( theta * Math.PI / 360 );
-    // this.camera.lookAt( this.scene.position );
+    this.camera.position.x = this.radius * Math.sin( theta * Math.PI / 360 );
+    this.camera.position.y = this.radius * Math.sin( theta * Math.PI / 360 );
+    this.camera.position.z = this.radius * Math.cos( theta * Math.PI / 360 );
+    this.camera.lookAt( this.scene.position );
 
 
     const look = new THREE.Vector3();
@@ -425,6 +428,15 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return mesh;
   }
 
+  private createItemMeshWithAvatar() {
+    const n = Math.floor(Math.random() * 30);
+    const material = new THREE.MeshBasicMaterial({ map: this.loder.load(this.avatars[n]) });
+    const geometry = new THREE.SphereGeometry(10, 20, 20);
+    geometry.computeTangents();
+    const mesh = new THREE.Mesh(geometry, material);
+    return mesh;
+  }
+
   public createGeometries() {
     let posArray = this.get3DPackingList(1200, 150);
     let storedPosArray = this.get3DPackingList(800, 100);
@@ -527,15 +539,15 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
 
   animate() {
     requestAnimationFrame(()=>this.animate());
-    // this.indexCurrent.rotation.x += 0.05;
 
-    // this.mesh.rotation.x += 0.05;
-    // this.mesh.rotation.y += 0.01;
-    // this.meshRotations();
     this.controls.update();
     // this.renderTween();
-    this.renderer.render(this.scene, this.camera);
+    this.render();
     TWEEN.update();
+  }
+
+  public render() {
+    this.renderer.render( this.scene, this.camera );
   }
 
   public startRendering() {
@@ -589,11 +601,11 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     this.camera.updateProjectionMatrix();
   }
 
-  public render() {
-    requestAnimationFrame(()=>this.render());
-    // this.animate();
-    this.renderer.render(this.scene, this.camera);
-  }
+  // public render() {
+  //   requestAnimationFrame(()=>this.render());
+  //   // this.animate();
+  //   this.renderer.render(this.scene, this.camera);
+  // }
 
   public get3DPackingList(dist: number, rad: number) {
     let positionArray = [];
@@ -1352,6 +1364,18 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     return new Vector3();
   }
 
+  private get2DPosition(base: Mesh) {
+    let packing = (base.userData as UserObject).packing2;
+    for(let i=0;i<packing.length;i++) {
+      if(!packing[i].occupied) {
+        packing[i].occupied = true;
+        let pos = packing[i].position;
+        return pos.set(pos.x + base.position.x, pos.y + base.position.y, 0);
+      }
+    }
+    return new Vector3();
+  }
+
   private createChildrenChain(id: number) {
     let chain = this.findChildrenIDBFS(id);
     for(let i=0;i<chain.length;i++) {
@@ -1467,6 +1491,30 @@ export class ThreeCanvasComponent implements OnInit, AfterViewInit {
     itemResourceData.forEach((ird) => {
       let mesh = this.createItemMesh();
       mesh.position.copy(this.getPosition(base));
+      let uobj = {} as UserObject;
+      uobj.packing2 = [];
+      uobj.packing3 = [];
+      uobj.resourcedata = ird;
+      uobj.showchildren = false;
+      mesh.userData = uobj;
+      this.scene.add(mesh);
+      this.collectionMeshArray.push(mesh);
+      this.meshArray.push(mesh);
+    });
+    (base.userData as UserObject).showchildren = true;
+  }
+
+  // Create Entity meshes of a collection
+  public createEntityMeshesByCollectionUUID(uuid: string) {
+    this.collectionMeshArray.splice(0);
+    let itemResourceData = this.findItemsByCollectionUuid(uuid);
+    let base = this.meshMap.get(this.UUID2Handle(uuid)) as Mesh;
+    this.hideLine(base);
+    base.position.multiplyScalar(this.COLLECTIONSCALAR);
+    itemResourceData.forEach((ird) => {
+      // let mesh = this.createItemMesh();
+      let mesh = this.createItemMeshWithAvatar();
+      mesh.position.copy(this.get2DPosition(base));
       let uobj = {} as UserObject;
       uobj.packing2 = [];
       uobj.packing3 = [];
