@@ -1,4 +1,4 @@
-an experimental 3D UI to allow users to capture and describe digital material in DSpace, to add fun and excitement to explore the repositories.
+An experimental 3D UI to allow users to capture and describe digital material in DSpace, to add fun and excitement to explore the repositories.
 
 # Angular Three
 
